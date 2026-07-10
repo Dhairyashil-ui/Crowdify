@@ -1,243 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrowdPulse Dashboard</title>
-    <meta name="description" content="CrowdPulse AI-powered crowd monitoring dashboard with real-time density analysis.">
+    <title>Croudify Dashboard</title>
+    <meta name="description" content="Croudify AI-powered crowd monitoring dashboard with real-time density analysis.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Google Sans"', 'Roboto', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        google: {
+                            bg: '#f8f9fa',
+                            card: '#ffffff',
+                            border: '#dadce0',
+                            textPrimary: '#202124',
+                            textSecondary: '#5f6368',
+                            blue: '#1a73e8',
+                            blueHover: '#1558d6',
+                            red: '#ea4335',
+                            yellow: '#fbbc04',
+                            green: '#34a853'
+                        }
+                    },
+                    boxShadow: {
+                        material: '0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15)',
+                        'material-hover': '0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15)',
+                    }
+                }
+            }
         }
-        .pulse-red { animation: pulse-red 2s infinite; }
+    </script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .material-panel {
+            background: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+        }
+
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+
         @keyframes pulse-red {
-            0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-            70%  { box-shadow: 0 0 0 20px rgba(239,68,68,0); }
-            100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(234, 67, 53, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(234, 67, 53, 0);
+            }
         }
 
         /* Pulsing red border for video container in RED status */
-        .pulse-red-border { animation: pulse-red-border 1.6s ease-in-out infinite; }
-        @keyframes pulse-red-border {
-            0%, 100% { box-shadow: 0 0 0 3px #ef4444, 0 0 30px rgba(239,68,68,0.65); }
-            50%       { box-shadow: 0 0 0 5px #ef4444, 0 0 45px rgba(239,68,68,0.85); }
+        .pulse-red-border {
+            animation: pulse-red-border 1.6s ease-in-out infinite;
         }
 
-        #sessionPanel { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes pulse-red-border {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 4px #ea4335, 0 0 20px rgba(234, 67, 53, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px #ea4335, 0 0 35px rgba(234, 67, 53, 0.5);
+            }
+        }
+
+        #sessionPanel {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         .code-char {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 2.8rem; height: 3.5rem;
-            background: linear-gradient(135deg, #eff6ff, #e0e7ff);
-            border: 2px solid #bfdbfe; border-radius: 0.75rem;
-            font-size: 1.75rem; font-weight: 900; color: #1e40af;
-            font-family: 'Inter', monospace;
-            box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.8rem;
+            height: 3.5rem;
+            background: #f8f9fa;
+            border: 1px solid #dadce0;
+            border-radius: 0.5rem;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a73e8;
+            font-family: 'Roboto', monospace;
             transition: transform 0.15s;
         }
-        .code-char:hover { transform: translateY(-2px); }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-down { animation: slideDown 0.35s ease forwards; }
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
 
-        @keyframes spin-slow { to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 1.2s linear infinite; }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-down {
+            animation: slideDown 0.35s ease forwards;
+        }
+
+        @keyframes spin-slow {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 1.2s linear infinite;
+        }
 
         /* LLM speaking indicator pulse */
         @keyframes speakPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.6; transform: scale(0.95); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.95);
+            }
         }
-        .speak-pulse { animation: speakPulse 0.8s ease-in-out infinite; }
+
+        .speak-pulse {
+            animation: speakPulse 0.8s ease-in-out infinite;
+        }
     </style>
 </head>
-<body class="min-h-screen p-8 text-slate-800">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+<body class="min-h-screen p-4 md:p-8 text-google-textPrimary font-sans">
+
+    <div class="max-w-[1500px] w-full mx-auto space-y-6">
 
         <!-- Header -->
-        <header class="flex flex-wrap justify-between items-center glass-panel rounded-2xl p-6 gap-4">
+        <header class="flex flex-wrap justify-between items-center material-panel rounded-2xl p-5 gap-4">
             <div>
-                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">CrowdPulse</h1>
-                <p class="text-slate-500 text-sm mt-1">Intelligence at Scale • Live Dashboard</p>
+                <h1 class="text-2xl font-bold text-google-textPrimary tracking-tight flex items-center gap-2">
+                    <svg class="w-7 h-7 text-google-blue" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+                    </svg>
+                    Croudify
+                </h1>
+                <p class="text-google-textSecondary text-sm mt-1">Enterprise Intelligence at Scale • Live Dashboard</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+
+            <div class="flex flex-wrap items-center gap-3">
                 <input id="serverUrlInput" type="text" placeholder="e.g. crowdpulse.onrender.com"
-                    class="text-sm px-3 py-2 rounded-xl border border-slate-300 bg-white/80 text-slate-700 w-56 focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                    class="text-sm px-4 py-2.5 rounded-lg border border-google-border bg-google-bg text-google-textPrimary w-64 focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent transition" />
                 <input id="sessionCodeInput" type="text" placeholder="6-Char Code" maxlength="6"
-                    class="text-sm px-3 py-2 rounded-xl border border-slate-300 bg-white/80 text-slate-700 w-32 uppercase focus:outline-none focus:ring-2 focus:ring-blue-400"/>
+                    class="text-sm px-4 py-2.5 rounded-lg border border-google-border bg-google-bg text-google-textPrimary w-36 uppercase focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent transition font-mono" />
                 <button id="connectBtn" onclick="connectFromUI()"
-                    class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-semibold hover:opacity-90 transition flex items-center gap-2 shadow-md">
+                    class="px-6 py-2.5 rounded-lg bg-google-blue text-white text-sm font-medium hover:bg-google-blueHover transition shadow-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                     Connect
                 </button>
-                <div id="connectionStatus" class="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-200 text-slate-600 font-semibold text-sm">
-                    <div id="statusDot" class="w-3 h-3 rounded-full bg-slate-400"></div>
+                <div id="connectionStatus"
+                    class="flex items-center gap-2 px-4 py-2 rounded-full border border-google-border bg-google-bg text-google-textSecondary font-medium text-sm">
+                    <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
                     <span id="statusText">Disconnected</span>
                 </div>
             </div>
         </header>
 
         <!-- Session connection banner -->
-        <div id="sessionInstructions" class="glass-panel rounded-2xl p-6 hidden">
+        <div id="sessionInstructions" class="material-panel rounded-2xl p-6 hidden">
             <div class="flex flex-col gap-2">
-                <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest">Connection Live</p>
-                <p class="text-xs text-slate-500 max-w-lg">You are connected to the Android camera feed for session
-                    <span id="connectedSessionCode" class="font-bold text-indigo-600"></span>.
+                <p class="text-xs font-bold text-google-textSecondary uppercase tracking-wider">Connection Live</p>
+                <p class="text-sm text-google-textPrimary max-w-lg">You are connected to the Android camera feed for
+                    session
+                    <span id="connectedSessionCode" class="font-mono font-bold text-google-blue"></span>.
                 </p>
             </div>
         </div>
 
-        <!-- Main Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
-            <!-- Normal Video Feed -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-semibold flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                        Live Feed
-                    </h2>
-                    <span id="timestampDisplay" class="text-xs text-slate-400 font-mono">--:--:--</span>
-                </div>
-
-                <!-- videoContainer gets id for JS border control -->
-                <div id="videoContainer" class="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex items-center justify-center" style="transition: box-shadow 0.4s ease;">
-                    <img id="videoStream"
-                        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                        class="w-full h-full object-contain hidden" alt="Live Feed">
-
-                    <!-- No Signal -->
-                    <div id="noSignal" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 z-10">
-                        <svg class="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243-4.243a5 5 0 000 7.072m0 0L5 21m0 0l2.829-2.829M8.464 5.636a9 9 0 000 12.728"/>
-                        </svg>
-                        <span class="font-medium tracking-widest text-[10px] uppercase">Connecting...</span>
+            <!-- Left Column: Video Feeds (Dominant) -->
+            <div class="xl:col-span-3 flex flex-col gap-6">
+                <!-- Normal Video Feed -->
+                <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-semibold flex items-center gap-2 text-google-textPrimary">
+                            <span class="w-2.5 h-2.5 rounded-full bg-google-blue"></span>
+                            Live Monitoring Feed
+                        </h2>
+                        <span id="timestampDisplay"
+                            class="text-xs text-google-textSecondary font-mono bg-google-bg px-2 py-1 rounded">--:--:--</span>
                     </div>
 
-                    <!-- Reconnecting Overlay -->
-                    <div id="reconnectingOverlay"
-                        class="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20 opacity-0 pointer-events-none transition-opacity duration-300">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
-                        <h3 class="text-base font-bold">Network Lost</h3>
+                    <!-- videoContainer dynamically stretches -->
+                    <div id="videoContainer"
+                        class="relative w-full rounded-lg overflow-hidden bg-black flex-grow flex items-center justify-center border border-google-border"
+                        style="min-height: 60vh; transition: box-shadow 0.4s ease;">
+                        <img id="videoStream"
+                            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                            class="w-full h-full object-contain hidden" alt="Live Feed">
+
+                        <!-- No Signal -->
+                        <div id="noSignal"
+                            class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 z-10 bg-gray-100">
+                            <svg class="w-12 h-12 mb-3 text-gray-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243-4.243a5 5 0 000 7.072m0 0L5 21m0 0l2.829-2.829M8.464 5.636a9 9 0 000 12.728" />
+                            </svg>
+                            <span class="font-medium tracking-widest text-xs uppercase text-gray-500">Connecting to
+                                Source...</span>
+                        </div>
+
+                        <!-- Reconnecting Overlay -->
+                        <div id="reconnectingOverlay"
+                            class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white z-20 opacity-0 pointer-events-none transition-opacity duration-300">
+                            <div
+                                class="animate-spin rounded-full h-10 w-10 border-4 border-white/20 border-t-white mb-3">
+                            </div>
+                            <h3 class="text-base font-bold">Network Lost</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heatmap Feed -->
+                <div class="material-panel p-5 relative overflow-hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="w-2.5 h-2.5 rounded-full bg-google-red"></span>
+                        <h2 class="text-base font-semibold text-google-textPrimary">Heatmap Density Analysis</h2>
+                        <span class="text-xs text-google-textSecondary ml-auto bg-google-bg px-2 py-1 rounded">🔵 sparse
+                            → 🔴 dense</span>
+                    </div>
+                    <!-- Slightly smaller height for heatmap as it's secondary -->
+                    <div id="heatmapContainer"
+                        class="relative w-full aspect-[21/9] bg-black rounded-lg overflow-hidden border border-google-border flex items-center justify-center">
+                        <img id="heatmapStream" class="w-full h-full object-contain hidden" alt="Heatmap">
+                        <div id="heatmapNoSignal"
+                            class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm bg-gray-100">
+                            Waiting for heatmap telemetry stream...
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Heatmap Feed -->
-            <div class="glass-panel rounded-2xl p-4 relative overflow-hidden">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <h2 class="text-sm font-semibold">Heatmap Density</h2>
-                    <span class="text-[10px] text-slate-400 ml-auto">🔵 sparse → 🔴 dense</span>
-                </div>
-                <div id="heatmapContainer" class="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex items-center justify-center">
-                    <img id="heatmapStream" class="w-full h-full object-contain hidden" alt="Heatmap">
-                    <div id="heatmapNoSignal" class="absolute inset-0 flex items-center justify-center text-slate-500 text-xs">
-                        Waiting for heatmap...
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats & Alerts Column -->
-            <div class="flex flex-col gap-6">
+            <!-- Right Column: Stats & Alerts -->
+            <div class="xl:col-span-1 flex flex-col gap-6">
 
                 <!-- Density Widget -->
-                <div id="densityCard" class="glass-panel rounded-2xl p-6 transition-all duration-500 border-2">
-                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Crowd Density</h2>
-                    <div class="flex items-end gap-3 mb-4">
-                        <span id="peopleCount" class="text-6xl font-black tabular-nums text-slate-800">0</span>
-                        <span class="text-lg text-slate-500 font-medium pb-2">people</span>
+                <div id="densityCard"
+                    class="material-panel p-6 transition-all duration-500 border-t-4 border-t-transparent">
+                    <h2 class="text-xs font-bold text-google-textSecondary uppercase tracking-wider mb-2">Crowd Density
+                    </h2>
+                    <div class="flex items-end gap-3 mb-5">
+                        <span id="peopleCount"
+                            class="text-7xl font-bold tracking-tight tabular-nums text-google-textPrimary leading-none mt-2">0</span>
+                        <span class="text-sm font-medium text-google-textSecondary mb-1">people</span>
                     </div>
                     <!-- Thresholds legend -->
-                    <div class="flex gap-2 text-xs mb-4">
-                        <span class="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 font-semibold">🟢 &lt;5 Safe</span>
-                        <span class="px-2 py-1 rounded-lg bg-amber-100 text-amber-700 font-semibold">🟡 5-10 Monitor</span>
-                        <span class="px-2 py-1 rounded-lg bg-red-100 text-red-700 font-semibold">🔴 &gt;10 Alert</span>
+                    <div class="flex flex-wrap gap-2 text-[11px] mb-5">
+                        <span
+                            class="px-2.5 py-1 rounded-md bg-green-50 text-google-green border border-green-200 font-semibold">🟢
+                            &lt;5 Safe</span>
+                        <span
+                            class="px-2.5 py-1 rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200 font-semibold">🟡
+                            5-10 Monitor</span>
+                        <span
+                            class="px-2.5 py-1 rounded-md bg-red-50 text-google-red border border-red-200 font-semibold">🔴
+                            &gt;10 Alert</span>
                     </div>
-                    <div id="statusBadge" class="inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold transition-colors duration-300">
-                        <div id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-slate-400"></div>
+                    <div id="statusBadge"
+                        class="inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-lg border border-google-border bg-google-bg text-google-textSecondary font-bold text-sm transition-colors duration-300">
+                        <div id="statusIndicator" class="w-3 h-3 rounded-full bg-gray-400"></div>
                         <span id="statusLabel">IDLE</span>
                     </div>
                 </div>
 
                 <!-- Alert Box -->
-                <div id="alertBox" class="glass-panel rounded-2xl p-6 border-l-4 border-slate-300 opacity-50 transition-all duration-300">
+                <div id="alertBox"
+                    class="material-panel p-5 border-l-4 border-l-gray-300 opacity-60 transition-all duration-300">
                     <div class="flex items-start gap-3">
-                        <div id="alertIcon" class="p-2 rounded-lg bg-slate-100 text-slate-400">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div id="alertIcon"
+                            class="p-2 rounded-full bg-google-bg text-google-textSecondary border border-google-border">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
                         <div>
-                            <h3 id="alertTitle" class="font-bold text-slate-700">System Monitoring</h3>
-                            <p id="alertMessage" class="text-sm text-slate-500 mt-1">Analyzing density zones...</p>
+                            <h3 id="alertTitle" class="text-sm font-bold text-google-textPrimary">System Monitoring</h3>
+                            <p id="alertMessage" class="text-xs text-google-textSecondary mt-1 leading-relaxed">
+                                Analyzing density zones and waiting for input...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- ★ LLM Instruction Panel ★ -->
-                <div id="llmPanel" class="glass-panel rounded-2xl p-5 border-l-4 border-violet-400 opacity-50 hidden transition-all duration-300">
+                <!-- AI Instruction Panel -->
+                <div id="llmPanel"
+                    class="material-panel p-5 border-l-4 border-l-purple-500 opacity-60 hidden transition-all duration-300 bg-[#fbf9ff]">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-2">
                             <!-- Brain icon -->
-                            <div class="p-1.5 rounded-lg bg-violet-100">
-                                <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="p-1.5 rounded bg-purple-100 border border-purple-200">
+                                <svg class="w-4 h-4 text-purple-700" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                 </svg>
                             </div>
-                            <span class="text-sm font-bold text-violet-700">AI Instruction</span>
-                            <span id="llmStatusBadge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500"></span>
+                            <span class="text-sm font-bold text-purple-800">AI Assistant</span>
+                            <span id="llmStatusBadge"
+                                class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-white border border-gray-200 text-gray-500 uppercase tracking-wider"></span>
                         </div>
                         <!-- Speaking badge -->
-                        <span id="llmSpeakingBadge" class="hidden flex items-center gap-1 text-xs font-semibold text-violet-600 bg-violet-100 px-2 py-1 rounded-full speak-pulse">
+                        <span id="llmSpeakingBadge"
+                            class="hidden flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-100 border border-purple-200 px-2 py-1 rounded-full speak-pulse flex-shrink-0">
                             🔊 Speaking...
                         </span>
                     </div>
-                    <p id="llmText" class="text-sm text-slate-700 leading-relaxed italic">Waiting for AI analysis...</p>
-                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
-                        <span id="llmReason" class="text-xs text-slate-400"></span>
-                        <span id="llmTimestamp" class="text-xs text-slate-400 font-mono"></span>
+                    <p id="llmText" class="text-sm text-google-textPrimary leading-relaxed font-medium">Waiting for AI
+                        analysis...</p>
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-purple-100">
+                        <span id="llmReason" class="text-xs text-purple-600/70 font-medium"></span>
+                        <span id="llmTimestamp" class="text-xs text-gray-400 font-mono"></span>
                     </div>
                 </div>
 
-                <!-- System Info -->
-                <div class="glass-panel rounded-2xl p-6 flex-1">
-                    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">System Logistics</h2>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex justify-between border-b border-slate-200 pb-2">
-                            <span class="text-slate-500">Session Code</span>
-                            <span id="currentSessionCode" class="font-mono font-bold text-indigo-600">—</span>
+                <!-- System Info Box -->
+                <div class="material-panel p-6 flex-1 flex flex-col justify-end bg-[#fdfdfd]">
+                    <h2 class="text-[11px] font-bold text-google-textSecondary uppercase tracking-wider mb-4">
+                        Diagnostics & Logistics</h2>
+                    <ul class="space-y-3 text-xs">
+                        <li class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-google-textSecondary">Session Code</span>
+                            <span id="currentSessionCode"
+                                class="font-mono font-bold text-google-blue bg-blue-50 px-2 py-0.5 rounded border border-blue-100">—</span>
                         </li>
-                        <li class="flex justify-between border-b border-slate-200 pb-2">
-                            <span class="text-slate-500">Camera Source</span>
-                            <span class="font-medium">Mobile WebSockets</span>
+                        <li class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-google-textSecondary">Camera Source</span>
+                            <span class="font-medium text-google-textPrimary">Mobile WebSockets</span>
                         </li>
-                        <li class="flex justify-between border-b border-slate-200 pb-2">
-                            <span class="text-slate-500">AI Detection</span>
-                            <span class="font-medium text-emerald-600">YOLOv8 Medium</span>
+                        <li class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-google-textSecondary">Computer Vision</span>
+                            <span class="font-medium text-google-green">YOLOv8 Medium</span>
                         </li>
-                        <li class="flex justify-between border-b border-slate-200 pb-2">
-                            <span class="text-slate-500">LLM Engine</span>
-                            <span class="font-medium text-violet-600">Llama 3.1-8b (Groq)</span>
+                        <li class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-google-textSecondary">LLM Engine</span>
+                            <span class="font-medium text-purple-600">Llama 3.1-8b (Groq)</span>
                         </li>
-                        <li class="flex justify-between pb-2">
-                            <span class="text-slate-500">Last Frame</span>
-                            <span id="latencyCalc" class="font-mono text-xs mt-1">0ms ago</span>
+                        <li class="flex justify-between items-center pb-1">
+                            <span class="text-google-textSecondary">Last Frame Arrival</span>
+                            <span id="latencyCalc"
+                                class="font-mono text-xs font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-200">0ms
+                                ago</span>
                         </li>
                     </ul>
                 </div>
@@ -246,7 +387,10 @@
         </div>
     </div>
 
-    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <!-- Audio element for alerts -->
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
     <script src="app.js"></script>
 </body>
+
 </html>

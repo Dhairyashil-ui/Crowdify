@@ -64,6 +64,12 @@ if ML_NODE_URL:
     model = None
 else:
     logger.info("Local ML Mode Enabled: Loading YOLO model...")
+    import torch
+    _original_load = torch.load
+    def _patched_load(*args, **kwargs):
+        kwargs['weights_only'] = False
+        return _original_load(*args, **kwargs)
+    torch.load = _patched_load
     from ultralytics import YOLO
     model = YOLO("yolov8m.pt")
     logger.info("YOLO medium model loaded for high accuracy.")

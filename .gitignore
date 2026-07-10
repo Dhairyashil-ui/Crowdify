@@ -1,15 +1,30 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Android
+.gradle/
+.idea/
+build/
+app/build/
+*.apk
+*.aab
+
+# Python virtual env
+.env
+venv/
+
+# AI Models
+*.pt
+*.pth
+*.onnx
+
+# Videos
+*.avi
+*.mp4
+*.mov
+
+# Logs
+*.log
+full_logcat.txt
