@@ -915,13 +915,9 @@ async def websocket_dashboard(websocket: WebSocket, code: str):
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        logger.warning(f"[{code}] Dashboard connection closed abruptly: {e}")
-    finally:
         if websocket in session.dashboard_connections:
             session.dashboard_connections.remove(websocket)
-        logger.info(f"[{code}] Dashboard disconnected. Total dashboards: {len(session.dashboard_connections)}")
+        logger.info(f"[{code}] Dashboard disconnected.")
 
 
 if __name__ == "__main__":
