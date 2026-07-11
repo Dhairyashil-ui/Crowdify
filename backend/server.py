@@ -845,7 +845,7 @@ async def websocket_camera(websocket: WebSocket, code: str):
                                 await ws.send_text(payload)
                             await ws.send_bytes(jpeg)
                             if heatmap is not None:
-                                await ws.send_bytes(b'\xff' + heatmap)
+                                await ws.send_bytes(b'\xfe' + heatmap)
                         except Exception:
                             if ws in session.dashboard_connections:
                                 session.dashboard_connections.remove(ws)

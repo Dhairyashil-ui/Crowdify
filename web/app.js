@@ -149,7 +149,7 @@ function connectToDashboard(host, code) {
 
         } else if (event.data instanceof ArrayBuffer) {
             const view = new Uint8Array(event.data);
-            if (view[0] === 0xFF) {
+            if (view[0] === 0xFE) {
                 renderHeatmap(event.data.slice(1));
             } else {
                 console.log(`%c[RENDER] ArrayBuffer ${event.data.byteLength} bytes. Decoding...`, 'color: #8b5cf6;');
