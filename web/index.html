@@ -207,7 +207,7 @@
         <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
 
             <!-- Left Column: Video Feeds (Dominant) -->
-            <div class="xl:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="xl:col-span-3 flex flex-col gap-6">
                 <!-- Normal Video Feed -->
                 <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
                     <div class="flex justify-between items-center mb-4">
@@ -221,8 +221,8 @@
 
                     <!-- videoContainer dynamically stretches -->
                     <div id="videoContainer"
-                        class="relative w-full aspect-video rounded-lg overflow-hidden bg-black flex-grow flex items-center justify-center border border-google-border"
-                        style="transition: box-shadow 0.4s ease;">
+                        class="relative w-full rounded-lg overflow-hidden bg-black flex-grow flex items-center justify-center border border-google-border"
+                        style="min-height: 60vh; transition: box-shadow 0.4s ease;">
                         <img id="videoStream"
                             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                             class="w-full h-full object-contain hidden" alt="Live Feed">
@@ -251,16 +251,16 @@
                 </div>
 
                 <!-- Heatmap Feed -->
-                <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
+                <div class="material-panel p-5 relative overflow-hidden">
                     <div class="flex items-center gap-2 mb-4">
                         <span class="w-2.5 h-2.5 rounded-full bg-google-red"></span>
                         <h2 class="text-base font-semibold text-google-textPrimary">Heatmap Density Analysis</h2>
                         <span class="text-xs text-google-textSecondary ml-auto bg-google-bg px-2 py-1 rounded">🔵 sparse
                             → 🔴 dense</span>
                     </div>
-                    <!-- Matching height for heatmap -->
+                    <!-- Slightly smaller height for heatmap as it's secondary -->
                     <div id="heatmapContainer"
-                        class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex-grow border border-google-border flex items-center justify-center">
+                        class="relative w-full aspect-[21/9] bg-black rounded-lg overflow-hidden border border-google-border flex items-center justify-center">
                         <img id="heatmapStream" class="w-full h-full object-contain hidden" alt="Heatmap">
                         <div id="heatmapNoSignal"
                             class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm bg-gray-100">
