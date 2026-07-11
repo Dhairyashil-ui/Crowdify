@@ -42,14 +42,33 @@
     </script>
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #fafbfc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(26,115,232,0.04) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(52,168,83,0.03) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(234,67,53,0.03) 0px, transparent 50%);
+            background-attachment: fixed;
         }
 
         .material-panel {
-            background: #ffffff;
-            border: 1px solid #dadce0;
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 1.25rem;
+            box-shadow: 
+                0 15px 35px -5px rgba(15, 23, 42, 0.05),
+                0 3px 10px -3px rgba(15, 23, 42, 0.03),
+                inset 0 1px 1px rgba(255,255,255,1);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .material-panel:hover {
+            box-shadow: 
+                0 25px 45px -5px rgba(15, 23, 42, 0.08),
+                0 5px 15px -3px rgba(15, 23, 42, 0.04),
+                inset 0 1px 1px rgba(255,255,255,1);
+            transform: translateY(-2px);
         }
 
         .pulse-red {
@@ -173,11 +192,11 @@
 
             <div class="flex flex-wrap items-center gap-3">
                 <input id="serverUrlInput" type="text" placeholder="e.g. crowdpulse.onrender.com"
-                    class="text-sm px-4 py-2.5 rounded-lg border border-google-border bg-google-bg text-google-textPrimary w-64 focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent transition" />
+                    class="text-sm px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm text-google-textPrimary w-64 focus:outline-none focus:ring-2 focus:ring-google-blue/50 focus:border-google-blue transition-all shadow-inner" />
                 <input id="sessionCodeInput" type="text" placeholder="6-Char Code" maxlength="6"
-                    class="text-sm px-4 py-2.5 rounded-lg border border-google-border bg-google-bg text-google-textPrimary w-36 uppercase focus:outline-none focus:ring-2 focus:ring-google-blue focus:border-transparent transition font-mono" />
+                    class="text-sm px-4 py-2.5 rounded-xl border border-gray-200 bg-white/50 backdrop-blur-sm text-google-textPrimary w-36 uppercase focus:outline-none focus:ring-2 focus:ring-google-blue/50 focus:border-google-blue transition-all shadow-inner font-mono" />
                 <button id="connectBtn" onclick="connectFromUI()"
-                    class="px-6 py-2.5 rounded-lg bg-google-blue text-white text-sm font-medium hover:bg-google-blueHover transition shadow-sm flex items-center gap-2">
+                    class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-google-blue to-blue-600 text-white text-sm font-semibold hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2 border border-blue-500/50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -204,15 +223,18 @@
         </div>
 
         <!-- Main Grid Layout -->
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
 
             <!-- Left Column: Video Feeds (Dominant) -->
-            <div class="xl:col-span-3 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="lg:col-span-3 grid grid-cols-2 gap-4 md:gap-6">
                 <!-- Normal Video Feed -->
                 <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-base font-semibold flex items-center gap-2 text-google-textPrimary">
-                            <span class="w-2.5 h-2.5 rounded-full bg-google-blue"></span>
+                            <span class="relative flex h-3 w-3">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-google-blue"></span>
+                            </span>
                             Live Monitoring Feed
                         </h2>
                         <span id="timestampDisplay"
@@ -221,8 +243,8 @@
 
                     <!-- videoContainer dynamically stretches -->
                     <div id="videoContainer"
-                        class="relative w-full rounded-lg overflow-hidden bg-black flex-grow flex items-center justify-center border border-google-border aspect-video"
-                        style="transition: box-shadow 0.4s ease;">
+                        class="relative w-full rounded-xl overflow-hidden bg-gray-900 flex-grow flex items-center justify-center border border-gray-700 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] aspect-video max-h-[50vh] ring-1 ring-white/10"
+                        style="transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);">
                         <img id="videoStream"
                             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                             class="w-full h-full object-contain hidden" alt="Live Feed">
@@ -253,14 +275,18 @@
                 <!-- Heatmap Feed -->
                 <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="w-2.5 h-2.5 rounded-full bg-google-red"></span>
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-google-red"></span>
+                        </span>
                         <h2 class="text-base font-semibold text-google-textPrimary">Heatmap Density Analysis</h2>
                         <span class="text-xs text-google-textSecondary ml-auto bg-google-bg px-2 py-1 rounded">🔵 sparse
                             → 🔴 dense</span>
                     </div>
                     <!-- Slightly smaller height for heatmap as it's secondary -->
                     <div id="heatmapContainer"
-                        class="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-google-border flex-grow flex items-center justify-center">
+                        class="relative w-full aspect-video max-h-[50vh] bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] flex-grow flex items-center justify-center ring-1 ring-white/10"
+                        style="transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);">
                         <img id="heatmapStream" class="w-full h-full object-contain hidden" alt="Heatmap">
                         <div id="heatmapNoSignal"
                             class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm bg-gray-100">
@@ -271,7 +297,7 @@
             </div>
 
             <!-- Right Column: Stats & Alerts -->
-            <div class="xl:col-span-1 flex flex-col gap-6">
+            <div class="lg:col-span-1 flex flex-col gap-4 md:gap-6">
 
                 <!-- Density Widget -->
                 <div id="densityCard"
