@@ -48,7 +48,7 @@ const CODE_STORAGE_KEY = 'crowdpulse_session_code';
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function getServerHost() {
     const raw = document.getElementById('serverUrlInput').value.trim();
-    if (raw) return raw.replace(/^wss?:\/\//, '').replace(/^https?:\/\//, '');
+    if (raw) return raw.replace(/^wss?:\/\//, '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
     return localStorage.getItem(STORAGE_KEY) || '';
 }
 

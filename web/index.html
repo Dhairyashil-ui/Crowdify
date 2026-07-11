@@ -251,7 +251,7 @@
                 </div>
 
                 <!-- Heatmap Feed -->
-                <div class="material-panel p-5 relative overflow-hidden">
+                <div class="material-panel p-5 relative overflow-hidden flex flex-col w-full h-full">
                     <div class="flex items-center gap-2 mb-4">
                         <span class="w-2.5 h-2.5 rounded-full bg-google-red"></span>
                         <h2 class="text-base font-semibold text-google-textPrimary">Heatmap Density Analysis</h2>
@@ -260,7 +260,7 @@
                     </div>
                     <!-- Matching height for heatmap -->
                     <div id="heatmapContainer"
-                        class="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-google-border flex items-center justify-center">
+                        class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex-grow border border-google-border flex items-center justify-center">
                         <img id="heatmapStream" class="w-full h-full object-contain hidden" alt="Heatmap">
                         <div id="heatmapNoSignal"
                             class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm bg-gray-100">
