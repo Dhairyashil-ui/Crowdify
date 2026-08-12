@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
+# Pre-install numpy because 'lap' requires it at build time for its C++ extensions
+RUN pip install --no-cache-dir numpy
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
