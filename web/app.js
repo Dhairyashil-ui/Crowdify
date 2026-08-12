@@ -272,12 +272,30 @@ function connectToDashboard(host, code) {
         statusDot.className    = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         clearInterval(checkConnectionInterval);
         checkConnectionInterval = setInterval(checkFallbackState, 1000);
+        // Header status bar
+        const dDot = document.getElementById('devSystemDot');
+        const dTxt = document.getElementById('devSystemStatus');
+        if (dDot) { dDot.className = 'w-2 h-2 rounded-full bg-emerald-500 pulse-dot'; }
+        if (dTxt) { dTxt.textContent = 'SYSTEM ONLINE'; dTxt.className = 'text-[10px] font-bold text-emerald-400 tracking-wide'; }
+        const camEl = document.getElementById('devCamId');
+        const locEl = document.getElementById('devLocation');
+        if (camEl) camEl.textContent = `CAM-${code.slice(0,2)}`;
+        if (locEl) locEl.textContent = 'Live Feed';
     };
 
     ws.onclose = (event) => {
         statusText.textContent = 'Disconnected';
         statusDot.className    = 'w-2 h-2 rounded-full bg-red-500';
         clearInterval(checkConnectionInterval);
+        // Header status bar — show offline
+        const dDot = document.getElementById('devSystemDot');
+        const dTxt = document.getElementById('devSystemStatus');
+        if (dDot) { dDot.className = 'w-2 h-2 rounded-full bg-gray-500'; }
+        if (dTxt) { dTxt.textContent = 'SYSTEM OFFLINE'; dTxt.className = 'text-[10px] font-bold text-gray-500 tracking-wide'; }
+        const camEl = document.getElementById('devCamId');
+        const locEl = document.getElementById('devLocation');
+        if (camEl) camEl.textContent = '\u2014';
+        if (locEl) locEl.textContent = '\u2014';
         if (event.code === 4404) {
             alert('Session ended. Please reconnect with a new session code.');
             localStorage.removeItem(CODE_STORAGE_KEY);

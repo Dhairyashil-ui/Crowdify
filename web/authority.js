@@ -418,6 +418,13 @@ function setOfflineUI() {
     document.getElementById('critModal').classList.add('hidden');
     selectedZoneId=null; critAlertZoneId=null;
     clearInterval(alertTimerInt);
+    // Sys-pill — standby (muted)
+    const pill=document.getElementById('sysPill');
+    const dot =document.getElementById('sysDot');
+    const txt =document.getElementById('sysTxt');
+    if (pill) { pill.style.borderColor='rgba(63,104,128,0.2)'; pill.style.background='rgba(63,104,128,0.04)'; pill.style.color='rgba(63,104,128,0.55)'; }
+    if (dot)  { dot.style.background='rgba(63,104,128,0.5)'; dot.style.boxShadow='none'; dot.style.animation='none'; }
+    if (txt)  { txt.textContent='SYSTEM STANDBY'; }
     updateHeader();
     updateIncidentsList();
 }
@@ -425,6 +432,13 @@ function setOfflineUI() {
 function setOnlineUI() {
     isConnected=true;
     document.getElementById('standbyOverlay').style.display='none';
+    // Sys-pill — operational (green)
+    const pill=document.getElementById('sysPill');
+    const dot =document.getElementById('sysDot');
+    const txt =document.getElementById('sysTxt');
+    if (pill) { pill.style.borderColor=''; pill.style.background=''; pill.style.color=''; }
+    if (dot)  { dot.style.background=''; dot.style.boxShadow=''; dot.style.animation=''; }
+    if (txt)  { txt.textContent='ALL SYSTEMS OPERATIONAL'; }
     updateHeader();
     updateIncidentsList();
 }
