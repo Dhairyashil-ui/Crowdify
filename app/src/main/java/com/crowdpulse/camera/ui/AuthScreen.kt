@@ -145,7 +145,7 @@ fun AuthScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "Croudify Logo",
+                    contentDescription = "Crowdify Logo",
                     modifier = Modifier.fillMaxSize().clip(CircleShape)
                 )
             }
@@ -153,7 +153,7 @@ fun AuthScreen(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Croudify",
+                text = "Crowdify",
                 style = MaterialTheme.typography.headlineMedium,
                 color = TextPrimary,
                 fontWeight = FontWeight.Bold

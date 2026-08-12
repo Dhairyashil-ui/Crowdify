@@ -104,7 +104,7 @@ fun MainScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Configure the backend host URL for your Croudify server.",
+                        "Configure the backend host URL for your Crowdify server.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -164,7 +164,7 @@ fun MainScreen(
                         )
                         Spacer(Modifier.width(10.dp))
                         Text(
-                            "Croudify",
+                            "Crowdify",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface

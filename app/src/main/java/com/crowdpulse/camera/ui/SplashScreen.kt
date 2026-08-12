@@ -149,7 +149,7 @@ fun SplashScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "Croudify Logo",
+                    contentDescription = "Crowdify Logo",
                     modifier = Modifier.fillMaxSize().clip(CircleShape)
                 )
             }

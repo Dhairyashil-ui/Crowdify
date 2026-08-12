@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Croudify — Command Center | Authority Portal</title>
+    <meta name="description" content="Croudify Authority Portal — Emergency Operations Command Center for real-time crowd safety management and incident response.">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg:           #060a0f;
+        --surface:      #08101e;
+        --border:       rgba(0,183,255,0.10);
+        --border-mid:   rgba(0,183,255,0.22);
+        --text:         #b8d4ea;
+        --text-dim:     #3f6880;
+        --text-bright:  #e8f4ff;
+        --critical:     #ff3b3b;
+        --crit-bg:      rgba(255,59,59,0.06);
+        --crit-border:  rgba(255,59,59,0.28);
+        --watch:        #ffaa00;
+        --watch-bg:     rgba(255,170,0,0.06);
+        --watch-border: rgba(255,170,0,0.28);
+        --safe:         #00e676;
+        --safe-bg:      rgba(0,230,118,0.06);
+        --safe-border:  rgba(0,230,118,0.28);
+        --accent:       #00b7ff;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; overflow:hidden; }
+    body {
+        background-color: var(--bg);
+        background-image:
+            linear-gradient(rgba(0,183,255,0.022) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,183,255,0.022) 1px, transparent 1px);
+        background-size: 50px 50px;
+        color: var(--text);
+        font-family: 'Rajdhani', sans-serif;
+        display: flex; flex-direction: column;
+    }
+    body::after {
+        content:''; position:fixed; inset:0;
+        background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);
+        pointer-events:none; z-index:9999;
+    }
+
+    /* ── HEADER ── */
+    .cmd-hdr {
+        flex-shrink:0; height:72px;
+        background: rgba(6,10,15,0.97);
+        border-bottom: 1px solid var(--border-mid);
+        backdrop-filter: blur(20px);
+        padding: 0 1.5rem;
+        display:flex; align-items:center; gap:1.5rem;
+        z-index:100;
+    }
+    .brand { display:flex; align-items:center; gap:0.65rem; text-decoration:none; flex-shrink:0; }
+    .brand-icon {
+        width:38px; height:38px;
+        border:1.5px solid var(--accent); border-radius:8px;
+        display:flex; align-items:center; justify-content:center;
+        background: rgba(0,183,255,0.07);
+        box-shadow: 0 0 18px rgba(0,183,255,0.18), inset 0 0 10px rgba(0,183,255,0.05);
+    }
+    .brand-icon svg { width:20px; height:20px; fill:var(--accent); }
+    .brand-sub  { font-size:0.52rem; font-weight:700; letter-spacing:0.28em; color:var(--accent); line-height:1; }
+    .brand-name { font-family:'Orbitron',sans-serif; font-size:0.92rem; font-weight:900; color:var(--text-bright); letter-spacing:0.1em; line-height:1.25; }
+    .sys-pill {
+        display:flex; align-items:center; gap:0.42rem;
+        padding:0.28rem 0.8rem;
+        border:1px solid var(--safe-border); border-radius:4px; background:var(--safe-bg);
+        font-size:0.68rem; font-weight:700; letter-spacing:0.12em; color:var(--safe); white-space:nowrap;
+    }
+    .sys-dot {
+        width:8px; height:8px; border-radius:50%;
+        background:var(--safe); box-shadow:0 0 8px var(--safe);
+        animation: syspulse 2.4s ease-in-out infinite;
+    }
+    @keyframes syspulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+    .inc-badge {
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        padding:0.28rem 0.9rem; border:1px solid var(--border-mid); border-radius:4px;
+        background:var(--surface); flex-shrink:0; min-width:88px;
+    }
+    .inc-badge .ilbl { font-size:0.5rem; font-weight:700; letter-spacing:0.18em; color:var(--text-dim); }
+    .inc-badge .inum { font-family:'Orbitron',sans-serif; font-size:1.7rem; font-weight:900; color:var(--text-bright); line-height:1; }
+    .inc-badge.hascrit .inum { color:var(--critical); text-shadow:0 0 16px rgba(255,59,59,0.55); }
+    .zone-tiles { display:flex; gap:0.55rem; margin-left:auto; }
+    .zt {
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        padding:0.28rem 0.85rem; border-radius:4px; border:1px solid; min-width:82px; flex-shrink:0;
+    }
+    .zt .zlbl { font-size:0.48rem; font-weight:700; letter-spacing:0.15em; }
+    .zt .zcnt { font-family:'Orbitron',sans-serif; font-size:1.45rem; font-weight:900; line-height:1.1; }
+    .zt.safe  { border-color:var(--safe-border);  background:var(--safe-bg);  }
+    .zt.safe  .zlbl,.zt.safe  .zcnt { color:var(--safe); }
+    .zt.watch { border-color:var(--watch-border); background:var(--watch-bg); }
+    .zt.watch .zlbl,.zt.watch .zcnt { color:var(--watch); }
+    .zt.crit  { border-color:var(--crit-border);  background:var(--crit-bg);  }
+    .zt.crit  .zlbl { color:var(--critical); }
+    .zt.crit  .zcnt { color:var(--critical); text-shadow:0 0 14px rgba(255,59,59,0.6); }
+    .dev-link {
+        font-size:0.6rem; font-weight:600; letter-spacing:0.1em;
+        color:var(--text-dim); text-decoration:none;
+        padding:0.28rem 0.65rem; border:1px solid var(--border); border-radius:3px;
+        transition:all 0.2s; flex-shrink:0;
+    }
+    .dev-link:hover { color:var(--accent); border-color:var(--border-mid); }
+
+    /* ── MAIN GRID ── */
+    .cmd-main {
+        flex:1; display:grid; grid-template-columns:1fr 360px;
+        min-height:0; overflow:hidden;
+    }
+
+    /* ── MAP SECTION ── */
+    .map-sect {
+        display:flex; flex-direction:column;
+        border-right:1px solid var(--border);
+        overflow:hidden; min-height:0;
+    }
+    .conn-bar {
+        flex-shrink:0; display:flex; align-items:center; gap:0.7rem;
+        padding:0.42rem 1rem; background:rgba(0,183,255,0.03);
+        border-bottom:1px solid var(--border); flex-wrap:wrap;
+    }
+    .cb-lbl { font-size:0.56rem; font-weight:700; letter-spacing:0.16em; color:var(--text-dim); flex-shrink:0; }
+    .cb-in {
+        background:rgba(255,255,255,0.04); border:1px solid var(--border-mid);
+        color:var(--text-bright); padding:0.26rem 0.58rem; border-radius:3px;
+        font-family:'Share Tech Mono',monospace; font-size:0.66rem; outline:none;
+        transition:border-color 0.2s;
+    }
+    .cb-in:focus { border-color:var(--accent); }
+    .cb-in::placeholder { color:var(--text-dim); }
+    .cb-btn {
+        padding:0.26rem 0.72rem;
+        background:rgba(0,183,255,0.12); border:1px solid rgba(0,183,255,0.36);
+        color:var(--accent); border-radius:3px;
+        font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.66rem; letter-spacing:0.1em;
+        cursor:pointer; transition:all 0.2s;
+    }
+    .cb-btn:hover { background:rgba(0,183,255,0.22); }
+    .cst { display:flex; align-items:center; gap:0.38rem; }
+    .cdot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+    .cdot.live    { background:var(--safe);     box-shadow:0 0 8px var(--safe); }
+    .cdot.linking { background:var(--watch);    animation:syspulse 0.7s ease-in-out infinite; }
+    .cdot.err     { background:var(--critical); }
+    .ctxt { font-size:0.63rem; font-family:'Share Tech Mono',monospace; color:var(--text-dim); }
+    .demo-pill {
+        padding:0.14rem 0.52rem; border:1px solid rgba(255,170,0,0.36); border-radius:2px;
+        background:rgba(255,170,0,0.07); color:var(--watch); font-size:0.56rem; font-weight:700; letter-spacing:0.1em;
+    }
+
+    .map-panel {
+        flex:1; min-height:0; display:flex; flex-direction:column;
+        position:relative; overflow:hidden;
+    }
+    .map-topbar {
+        flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+        padding:0.48rem 1rem; border-bottom:1px solid var(--border);
+        background:rgba(0,183,255,0.02);
+    }
+    .map-topbar-title { font-size:0.58rem; font-weight:700; letter-spacing:0.22em; color:var(--text-dim); }
+    .map-topbar-time  { font-family:'Share Tech Mono',monospace; font-size:0.68rem; color:var(--accent); }
+    .live-badge {
+        display:flex; align-items:center; gap:0.32rem;
+        font-size:0.58rem; font-weight:700; color:var(--critical); letter-spacing:0.12em;
+    }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:var(--critical); animation:syspulse 1s ease-in-out infinite; }
+    #eventMap { flex:1; width:100%; cursor:crosshair; display:block; min-height:0; }
+
+    /* ── ZONE DETAIL SLIDE-IN ── */
+    .zone-detail {
+        position:absolute; top:0; right:0;
+        width:298px; height:100%;
+        background:rgba(5,9,16,0.97); border-left:1px solid var(--border-mid);
+        backdrop-filter:blur(14px);
+        transform:translateX(100%);
+        transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+        display:flex; flex-direction:column; z-index:50; overflow:hidden;
+    }
+    .zone-detail.open { transform:translateX(0); }
+    .zd-hdr {
+        padding:0.85rem 1rem; border-bottom:1px solid var(--border);
+        display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+    }
+    .zd-name { font-family:'Orbitron',sans-serif; font-size:0.76rem; font-weight:700; color:var(--text-bright); }
+    .zd-close {
+        background:none; border:1px solid var(--border-mid); color:var(--text-dim);
+        cursor:pointer; border-radius:3px; width:22px; height:22px; font-size:0.72rem;
+        display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+    }
+    .zd-close:hover { border-color:var(--critical); color:var(--critical); }
+    .zd-body { flex:1; overflow-y:auto; padding:0.75rem; }
+    .zd-metric {
+        display:flex; align-items:flex-start; justify-content:space-between;
+        padding:0.52rem 0; border-bottom:1px solid rgba(255,255,255,0.04);
+        font-size:0.88rem; gap:0.5rem;
+    }
+    .zd-key { color:var(--text-dim); font-weight:600; flex-shrink:0; }
+    .zd-val { font-family:'Share Tech Mono',monospace; color:var(--text-bright); text-align:right; }
+    .zd-val.c { color:var(--critical); }
+    .zd-val.w { color:var(--watch); }
+    .zd-val.s { color:var(--safe); }
+    .zd-risk-block {
+        margin:0.8rem 0; padding:0.8rem; border:1px solid var(--crit-border);
+        border-radius:4px; background:var(--crit-bg); text-align:center;
+    }
+    .zd-risk-lbl { font-size:0.56rem; letter-spacing:0.2em; color:var(--text-dim); font-weight:700; margin-bottom:0.18rem; }
+    .zd-risk-pct { font-family:'Orbitron',sans-serif; font-size:2.3rem; font-weight:900; line-height:1; }
+    .zd-risk-win { font-size:0.7rem; color:var(--text-dim); margin-top:0.18rem; }
+    .zd-act-title { font-size:0.56rem; font-weight:700; letter-spacing:0.18em; color:var(--accent); margin-bottom:0.42rem; }
+    .zd-act-list  { list-style:none; display:flex; flex-direction:column; gap:0.32rem; }
+    .zd-act-list li {
+        display:flex; gap:0.48rem; align-items:flex-start;
+        font-size:0.83rem; color:var(--text);
+        padding:0.38rem 0.58rem;
+        background:rgba(0,183,255,0.03); border:1px solid var(--border); border-radius:3px;
+    }
+    .zd-act-list li::before { content:'▸'; color:var(--accent); flex-shrink:0; }
+
+    /* ── SIDEBAR ── */
+    .cmd-sb {
+        display:flex; flex-direction:column;
+        background:var(--surface); overflow:hidden; min-height:0;
+    }
+    .sb-sec { border-bottom:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
+    .sb-sec.grow { flex:1; min-height:0; }
+    .sb-hdr {
+        padding:0.48rem 1rem; display:flex; align-items:center; justify-content:space-between;
+        border-bottom:1px solid rgba(255,255,255,0.04); flex-shrink:0;
+    }
+    .sb-hdr-t { font-size:0.56rem; font-weight:700; letter-spacing:0.2em; color:var(--text-dim); }
+    .sb-hdr-r { font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:var(--text-dim); }
+
+    /* Incidents list */
+    #incList { overflow-y:auto; max-height:33vh; display:flex; flex-direction:column; }
+    .inc-card {
+        padding:0.65rem 1rem; border-bottom:1px solid rgba(255,255,255,0.04);
+        cursor:pointer; transition:background 0.2s; display:flex; flex-direction:column; gap:0.28rem;
+    }
+    .inc-card:hover { background:rgba(255,255,255,0.02); }
+    .inc-card.c { border-left:3px solid var(--critical); }
+    .inc-card.w { border-left:3px solid var(--watch); }
+    .ic-r1  { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+    .ic-zone { font-size:0.92rem; font-weight:700; color:var(--text-bright); }
+    .ic-badge {
+        font-size:0.53rem; font-weight:700; letter-spacing:0.13em;
+        padding:0.1rem 0.48rem; border-radius:2px;
+    }
+    .ic-badge.CRITICAL { background:var(--crit-bg); border:1px solid var(--crit-border); color:var(--critical); }
+    .ic-badge.WATCH    { background:var(--watch-bg); border:1px solid var(--watch-border); color:var(--watch); }
+    .ic-r2  { display:flex; gap:1.1rem; align-items:center; }
+    .ic-stat { font-size:0.76rem; color:var(--text-dim); }
+    .ic-stat span { font-family:'Share Tech Mono',monospace; color:var(--text); }
+    .ic-rpct { font-family:'Share Tech Mono',monospace; font-size:0.82rem; margin-left:auto; }
+    .ic-rpct.c { color:var(--critical); }
+    .ic-rpct.w { color:var(--watch); }
+    .inc-empty { padding:1.2rem; text-align:center; color:var(--text-dim); font-size:0.8rem; }
+
+    /* Escalation panel */
+    #escPanel { display:none; }
+    .esc-body { padding:0.7rem 1rem; display:flex; flex-direction:column; gap:0.52rem; }
+    .esc-row  { display:flex; align-items:center; justify-content:space-between; font-size:0.83rem; }
+    .esc-key  { color:var(--text-dim); font-weight:600; }
+    .esc-val  { font-family:'Share Tech Mono',monospace; color:var(--text-bright); }
+    .esc-val.pend  { color:var(--watch); }
+    .esc-val.acked { color:var(--safe); }
+    .esc-val.escl  { color:var(--critical); }
+    .esc-timer {
+        font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; text-align:center;
+        padding:0.35rem; color:var(--watch); text-shadow:0 0 16px rgba(255,170,0,0.4);
+        transition:color 0.5s, text-shadow 0.5s; letter-spacing:0.06em;
+    }
+    .esc-timer.red { color:var(--critical); text-shadow:0 0 20px rgba(255,59,59,0.55); animation:tflash 0.75s ease-in-out infinite; }
+    @keyframes tflash { 50%{opacity:0.32} }
+    .esc-note { padding:0.38rem 1rem 0.65rem; font-size:0.7rem; color:var(--text-dim); text-align:center; }
+    .esc-note span { color:var(--watch); }
+    .esc-escl-banner {
+        display:none; margin:0.32rem 0.7rem 0.7rem;
+        padding:0.6rem; text-align:center;
+        background:var(--crit-bg); border:1px solid var(--crit-border); border-radius:4px;
+    }
+    .esc-escl-banner.show { display:block; }
+    .esc-escl-t { font-size:0.78rem; font-weight:700; color:var(--critical); letter-spacing:0.08em; }
+    .esc-escl-d { font-size:0.7rem; color:var(--text-dim); margin-top:0.12rem; }
+
+    /* Incident Replay */
+    .sb-sec.grow .sb-body {
+        flex:1; overflow-y:auto; display:flex; flex-direction:column; min-height:0;
+    }
+    .rp-sel-bar { padding:0.48rem 0.72rem; border-bottom:1px solid rgba(255,255,255,0.04); flex-shrink:0; }
+    .rp-sel-bar select {
+        width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border-mid);
+        color:var(--text-bright); padding:0.26rem 0.48rem;
+        font-family:'Share Tech Mono',monospace; font-size:0.66rem; border-radius:3px; outline:none; cursor:pointer;
+    }
+    .rp-scroll { flex:1; overflow-y:auto; min-height:0; }
+    .rp-timeline { padding:0.7rem 0.75rem; display:flex; flex-direction:column; }
+    .rp-evt {
+        display:flex; gap:0.62rem; align-items:flex-start;
+        position:relative; padding-bottom:0.65rem;
+        transition:opacity 0.3s;
+    }
+    .rp-evt:not(:last-child)::before {
+        content:''; position:absolute; left:7px; top:15px; width:1px; bottom:0;
+        background:var(--border);
+    }
+    .rp-dot {
+        width:15px; height:15px; border-radius:50%; flex-shrink:0;
+        border:2px solid; margin-top:1px;
+    }
+    .rp-dot.normal { border-color:var(--safe);     background:rgba(0,230,118,0.12); }
+    .rp-dot.watch  { border-color:var(--watch);    background:rgba(255,170,0,0.12); }
+    .rp-dot.alert  { border-color:var(--critical); background:rgba(255,59,59,0.12); }
+    .rp-dot.action { border-color:var(--accent);   background:rgba(0,183,255,0.12); }
+    .rp-info .rp-t { font-family:'Share Tech Mono',monospace; font-size:0.63rem; color:var(--text-dim); }
+    .rp-info .rp-l { font-size:0.83rem; font-weight:600; color:var(--text); margin-top:0.07rem; }
+    .rp-btn {
+        flex-shrink:0; margin:0.48rem 0.72rem 0.72rem;
+        padding:0.58rem;
+        background:rgba(0,183,255,0.07); border:1px solid rgba(0,183,255,0.26);
+        color:var(--accent); border-radius:3px;
+        font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.83rem; letter-spacing:0.1em;
+        cursor:pointer; width:calc(100% - 1.44rem);
+        transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:0.45rem;
+    }
+    .rp-btn:hover { background:rgba(0,183,255,0.14); box-shadow:0 0 12px rgba(0,183,255,0.1); }
+
+    /* ── CRITICAL ALERT MODAL ── */
+    .crit-modal {
+        position:fixed; inset:0; z-index:1000;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(4,7,12,0.93); backdrop-filter:blur(10px);
+        animation:mfade 0.26s ease;
+    }
+    .crit-modal.hidden { display:none; }
+    @keyframes mfade { from{opacity:0} to{opacity:1} }
+    .cm-box {
+        width:min(555px,95vw); background:#060d18;
+        border:1px solid var(--crit-border); border-radius:6px; overflow:hidden;
+        animation:mslide 0.36s cubic-bezier(0.34,1.4,0.64,1);
+        box-shadow:0 0 60px rgba(255,59,59,0.2), 0 0 120px rgba(255,59,59,0.07);
+    }
+    @keyframes mslide { from{transform:translateY(-26px) scale(0.94);opacity:0} to{transform:none;opacity:1} }
+    .cm-hdr {
+        padding:1.05rem 1.35rem; background:rgba(255,59,59,0.07);
+        border-bottom:1px solid var(--crit-border);
+        display:flex; align-items:center; gap:0.7rem;
+    }
+    .cm-ping {
+        width:14px; height:14px; border-radius:50%; background:var(--critical); flex-shrink:0;
+        box-shadow:0 0 0 0 rgba(255,59,59,0.7);
+        animation:cping 1.1s ease-in-out infinite;
+    }
+    @keyframes cping { 0%{box-shadow:0 0 0 0 rgba(255,59,59,0.8)} 70%{box-shadow:0 0 0 12px rgba(255,59,59,0)} 100%{box-shadow:0 0 0 0 rgba(255,59,59,0)} }
+    .cm-hdr-title { font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:700; letter-spacing:0.1em; color:var(--critical); }
+    .cm-hdr-timer { margin-left:auto; font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:var(--watch); }
+    .cm-hdr-timer.red { color:var(--critical); animation:tflash 0.65s ease-in-out infinite; }
+    .cm-body { padding:1.35rem; display:flex; flex-direction:column; gap:1.05rem; }
+    .cm-zone { font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:900; color:var(--text-bright); }
+    .cm-risk-row { display:flex; align-items:baseline; gap:0.42rem; }
+    .cm-risk-lbl  { font-size:0.88rem; font-weight:600; color:var(--text-dim); }
+    .cm-risk-val  { font-family:'Orbitron',sans-serif; font-size:2.75rem; font-weight:900; color:var(--critical); text-shadow:0 0 26px rgba(255,59,59,0.55); line-height:1; }
+    .cm-risk-unit { font-size:1.25rem; color:var(--critical); }
+    .cm-esc { font-size:0.88rem; color:var(--text-dim); }
+    .cm-esc strong { color:var(--watch); }
+    .cm-slbl { font-size:0.56rem; font-weight:700; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:0.32rem; }
+    .cm-cause {
+        padding:0.68rem 0.85rem;
+        background:rgba(255,170,0,0.05); border:1px solid rgba(255,170,0,0.17); border-radius:4px;
+        font-size:0.88rem; color:var(--text); line-height:1.55;
+    }
+    .cm-actions { display:flex; flex-direction:column; gap:0.35rem; }
+    .cm-action {
+        display:flex; gap:0.65rem; align-items:flex-start;
+        padding:0.42rem 0.68rem;
+        background:rgba(0,183,255,0.04); border:1px solid var(--border); border-radius:3px;
+        font-size:0.87rem; color:var(--text);
+    }
+    .cm-action-n { font-family:'Orbitron',sans-serif; font-size:0.7rem; color:var(--accent); font-weight:700; flex-shrink:0; margin-top:1px; }
+    .cm-ack-btn {
+        width:100%; padding:0.92rem;
+        background:linear-gradient(135deg,rgba(255,59,59,0.13),rgba(255,59,59,0.07));
+        border:2px solid var(--critical); color:var(--text-bright);
+        font-family:'Orbitron',sans-serif; font-size:0.8rem; font-weight:700; letter-spacing:0.13em;
+        border-radius:4px; cursor:pointer; transition:all 0.2s;
+        box-shadow:0 0 18px rgba(255,59,59,0.15);
+    }
+    .cm-ack-btn:hover {
+        background:linear-gradient(135deg,rgba(255,59,59,0.22),rgba(255,59,59,0.12));
+        box-shadow:0 0 32px rgba(255,59,59,0.3); transform:translateY(-1px);
+    }
+    .cm-ack-hint { text-align:center; font-size:0.7rem; color:var(--text-dim); }
+    .cm-ack-hint span { color:var(--watch); }
+
+    /* WHY SECTION in modal */
+    .cm-why { display:flex; flex-direction:column; gap:0.28rem; }
+    .cm-why-sig {
+        display:flex; align-items:flex-start; gap:0.52rem;
+        font-size:0.87rem; color:var(--text); padding:0.25rem 0;
+    }
+    .cm-why-check { color:var(--safe); flex-shrink:0; font-size:0.8rem; margin-top:1px; }
+    .cm-risk-line {
+        margin-top:0.55rem;
+        font-size:0.82rem; color:var(--text-dim);
+        padding:0.38rem 0.62rem;
+        background:rgba(0,183,255,0.04); border:1px solid var(--border); border-radius:3px;
+        font-family:'Rajdhani',sans-serif; font-weight:600;
+    }
+    .cm-risk-line strong { font-family:'Share Tech Mono',monospace; color:var(--text-bright); }
+
+    /* Signal analysis in zone detail */
+    .zd-signals { display:flex; flex-direction:column; gap:0.24rem; margin-bottom:0.75rem; }
+    .zd-sig {
+        display:flex; align-items:flex-start; gap:0.45rem;
+        font-size:0.82rem; color:var(--text); padding:0.22rem 0;
+    }
+    .zd-sig-check { color:var(--safe); flex-shrink:0; font-size:0.78rem; margin-top:1px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:rgba(0,183,255,0.17); border-radius:2px; }
+    ::-webkit-scrollbar-thumb:hover { background:rgba(0,183,255,0.34); }
+
+    /* Responsive */
+    @media (max-width:960px) {
+        html,body { height:auto; overflow:auto; }
+        .cmd-main { grid-template-columns:1fr; height:auto; overflow:visible; }
+        .map-sect { height:56vw; min-height:300px; }
+        .cmd-sb   { height:auto; }
+        .zone-tiles { gap:0.38rem; }
+        .zt { min-width:68px; padding:0.22rem 0.55rem; }
+        #incList { max-height:38vh; }
+        .cmd-hdr { gap:0.9rem; padding:0 0.9rem; }
+    }
+    .hidden { display:none !important; }
+    </style>
+</head>
+<body>
+
+<!-- ══ COMMAND CENTER HEADER ══════════════════════════════════════════ -->
+<header class="cmd-hdr">
+    <a href="#" class="brand" aria-label="Croudify Command Center">
+        <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <div>
+            <div class="brand-sub">CROUDIFY</div>
+            <div class="brand-name">COMMAND CENTER</div>
+        </div>
+    </a>
+
+    <div class="sys-pill" id="sysPill">
+        <span class="sys-dot" id="sysDot"></span>
+        <span id="sysTxt">ALL SYSTEMS OPERATIONAL</span>
+    </div>
+
+    <div class="inc-badge" id="incBadge">
+        <span class="ilbl">ACTIVE INCIDENTS</span>
+        <span class="inum" id="activeIncCount">00</span>
+    </div>
+
+    <div class="zone-tiles">
+        <div class="zt safe">
+            <span class="zlbl">SAFE ZONES</span>
+            <span class="zcnt" id="safeCount">00</span>
+        </div>
+        <div class="zt watch">
+            <span class="zlbl">WATCH ZONES</span>
+            <span class="zcnt" id="watchCount">00</span>
+        </div>
+        <div class="zt crit">
+            <span class="zlbl">CRITICAL ZONES</span>
+            <span class="zcnt" id="critCount">00</span>
+        </div>
+    </div>
+
+    <a href="index.html" class="dev-link" title="Switch to developer dashboard">⌥ DEV VIEW</a>
+</header>
+
+<!-- ══ MAIN LAYOUT ═══════════════════════════════════════════════════ -->
+<main class="cmd-main">
+
+    <!-- ── MAP SECTION ──────────────────────────────────────────── -->
+    <section class="map-sect">
+        <div class="conn-bar">
+            <span class="cb-lbl">BACKEND URL</span>
+            <input id="authUrl" class="cb-in" type="text" placeholder="host or localhost:8000" style="width:185px;">
+            <span class="cb-lbl">SESSION</span>
+            <input id="authCode" class="cb-in" type="text" placeholder="6-CHAR CODE" maxlength="6" style="width:102px;text-transform:uppercase;">
+            <button class="cb-btn" onclick="authorityConnect()">▶ CONNECT</button>
+            <div class="cst">
+                <div class="cdot" id="connDot"></div>
+                <span class="ctxt" id="connTxt">OFFLINE</span>
+            </div>
+            <span class="demo-pill" id="demoPill">⚑ DEMO MODE</span>
+        </div>
+
+        <div class="map-panel">
+            <div class="map-topbar">
+                <span class="map-topbar-title">▸ EVENT MAP — REAL-TIME ZONE INTELLIGENCE</span>
+                <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+                <span class="map-topbar-time" id="mapClock">--:--:--</span>
+            </div>
+            <canvas id="eventMap"></canvas>
+
+            <!-- Zone Detail Slide-In -->
+            <div class="zone-detail" id="zoneDetail">
+                <div class="zd-hdr">
+                    <span class="zd-name" id="zdName">ZONE —</span>
+                    <button class="zd-close" onclick="closeZoneDetail()">✕</button>
+                </div>
+                <div class="zd-body">
+                    <div class="zd-metric"><span class="zd-key">People</span><span class="zd-val" id="zdPeople">—</span></div>
+                    <div class="zd-metric"><span class="zd-key">Density</span><span class="zd-val" id="zdDensity">—</span></div>
+                    <div class="zd-metric"><span class="zd-key">Movement</span><span class="zd-val" id="zdMovement">—</span></div>
+                    <div class="zd-metric"><span class="zd-key">Compression</span><span class="zd-val" id="zdCompression">—</span></div>
+                    <div class="zd-metric"><span class="zd-key">Exit Blockage</span><span class="zd-val" id="zdExit">—</span></div>
+                    <div class="zd-risk-block" id="zdRiskBlock">
+                        <div class="zd-risk-lbl">PREDICTED RISK</div>
+                        <div class="zd-risk-pct" id="zdRiskPct">—</div>
+                        <div class="zd-risk-win" id="zdRiskWin">within 60 seconds</div>
+                    </div>
+                    <div id="zdWhySection" style="display:none;margin-bottom:0.75rem;">
+                        <div class="zd-act-title" style="margin-bottom:0.38rem;">WHY THIS ALERT WAS GENERATED</div>
+                        <div class="zd-signals" id="zdSignals"></div>
+                    </div>
+                    <div class="zd-act-title">▸ RECOMMENDED ACTION</div>
+                    <ul class="zd-act-list" id="zdActions"></ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+    <aside class="cmd-sb">
+
+        <!-- Active Incidents -->
+        <div class="sb-sec">
+            <div class="sb-hdr">
+                <span class="sb-hdr-t">▸ ACTIVE INCIDENTS</span>
+                <span class="sb-hdr-r" id="incTs">—</span>
+            </div>
+            <div id="incList">
+                <div class="inc-empty">● Monitoring all zones...</div>
+            </div>
+        </div>
+
+        <!-- Escalation Status -->
+        <div class="sb-sec" id="escPanel">
+            <div class="sb-hdr" style="background:rgba(255,59,59,0.05);">
+                <span class="sb-hdr-t" style="color:var(--critical);">▸ ESCALATION STATUS</span>
+            </div>
+            <div class="esc-body">
+                <div class="esc-row"><span class="esc-key">Alert issued</span><span class="esc-val" id="escIssued">—</span></div>
+                <div class="esc-row"><span class="esc-key">Acknowledgement</span><span class="esc-val pend" id="escAck">Pending</span></div>
+                <div class="esc-row"><span class="esc-key">Time remaining</span></div>
+                <div class="esc-timer" id="escTimer">01:00</div>
+            </div>
+            <div class="esc-note">If no response: <span>→ Automated call will be triggered</span></div>
+            <div class="esc-escl-banner" id="escBanner">
+                <div class="esc-escl-t">⚡ ESCALATION TRIGGERED</div>
+                <div class="esc-escl-d">Automated call to authority head initiated</div>
+            </div>
+        </div>
+
+        <!-- Incident Replay -->
+        <div class="sb-sec grow">
+            <div class="sb-hdr">
+                <span class="sb-hdr-t">▸ INCIDENT REPLAY</span>
+            </div>
+            <div class="sb-body" style="display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;">
+                <div class="rp-sel-bar">
+                    <select id="rpSelect" onchange="loadReplay(this.value)">
+                        <option value="204">INCIDENT #204 — EAST GATE</option>
+                        <option value="203">INCIDENT #203 — FOOD COURT</option>
+                        <option value="201">INCIDENT #201 — MAIN STAGE</option>
+                    </select>
+                </div>
+                <div class="rp-scroll">
+                    <div class="rp-timeline" id="rpTimeline"></div>
+                </div>
+                <button class="rp-btn" onclick="startReplay()">
+                    <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    REPLAY INCIDENT
+                </button>
+            </div>
+        </div>
+
+    </aside>
+</main>
+
+<!-- ══ CRITICAL ALERT MODAL ══════════════════════════════════════════ -->
+<div class="crit-modal hidden" id="critModal">
+    <div class="cm-box">
+        <div class="cm-hdr">
+            <div class="cm-ping"></div>
+            <span class="cm-hdr-title">🔴 CRITICAL CROWD RISK</span>
+            <span class="cm-hdr-timer" id="cmTimer">01:00</span>
+        </div>
+        <div class="cm-body">
+            <div class="cm-zone" id="cmZone">EAST GATE</div>
+            <div class="cm-risk-row">
+                <span class="cm-risk-lbl">Risk:</span>
+                <span class="cm-risk-val" id="cmRisk">87</span>
+                <span class="cm-risk-unit">%</span>
+            </div>
+            <div class="cm-esc">Predicted escalation: <strong>~<span id="cmEscSec">45</span> seconds</strong></div>
+            <div>
+                <div class="cm-slbl">CAUSE</div>
+                <div class="cm-cause" id="cmCause">High compression + converging movement + restricted exit capacity</div>
+            </div>
+            <div>
+                <div class="cm-slbl">WHY THIS ALERT WAS GENERATED</div>
+                <div class="cm-why" id="cmWhy"></div>
+                <div class="cm-risk-line">Risk score: <strong id="cmRiskScore">—</strong> / 100</div>
+            </div>
+            <div>
+                <div class="cm-slbl">RECOMMENDED ACTION</div>
+                <div class="cm-actions" id="cmActions"></div>
+            </div>
+            <button class="cm-ack-btn" onclick="acknowledgeAlert()">ACKNOWLEDGE &amp; TAKE ACTION</button>
+            <div class="cm-ack-hint">Auto-escalates in <span id="cmAckSec">60</span>s if no response</div>
+        </div>
+    </div>
+</div>
+
+<audio id="alertAudio" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+<script src="authority.js"></script>
+</body>
+</html>

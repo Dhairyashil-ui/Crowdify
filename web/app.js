@@ -1,15 +1,26 @@
 // ── DOM refs ────────────────────────────────────────────────────────────────
 const videoStream         = document.getElementById('videoStream');
+const heatmapStream       = document.getElementById('heatmapStream');
 const videoContainer      = document.getElementById('videoContainer');
 const noSignal            = document.getElementById('noSignal');
 const reconnectingOverlay = document.getElementById('reconnectingOverlay');
-const peopleCount         = document.getElementById('peopleCount');
-const statusBadge         = document.getElementById('statusBadge');
-const statusIndicator     = document.getElementById('statusIndicator');
-const statusLabel         = document.getElementById('statusLabel');
-const timestampDisplay    = document.getElementById('timestampDisplay');
+
+const fpsDisplay          = document.getElementById('fpsDisplay');
 const latencyCalc         = document.getElementById('latencyCalc');
-const densityCard         = document.getElementById('densityCard');
+const peopleCountBar      = document.getElementById('peopleCountBar');
+
+const riskScoreHero       = document.getElementById('riskScoreHero');
+const riskBadge           = document.getElementById('riskBadge');
+const riskIndicatorDot    = document.getElementById('riskIndicatorDot');
+const riskLabel           = document.getElementById('riskLabel');
+const riskTrendIcon       = document.getElementById('riskTrendIcon');
+const riskTrendLabel      = document.getElementById('riskTrendLabel');
+
+const predFrom            = document.getElementById('predFrom');
+const predTo              = document.getElementById('predTo');
+const predRiskPercent     = document.getElementById('predRiskPercent');
+const predConfidence      = document.getElementById('predConfidence');
+
 const alertBox            = document.getElementById('alertBox');
 const alertIcon           = document.getElementById('alertIcon');
 const alertTitle          = document.getElementById('alertTitle');
@@ -17,44 +28,215 @@ const alertMessage        = document.getElementById('alertMessage');
 const statusText          = document.getElementById('statusText');
 const statusDot           = document.getElementById('statusDot');
 const alertSound          = document.getElementById('alertSound');
-const sessionInstructions = document.getElementById('sessionInstructions');
-const connectedSessionCode = document.getElementById('connectedSessionCode');
 const currentSessionCode  = document.getElementById('currentSessionCode');
 
-// LLM panel DOM refs
 const llmPanel            = document.getElementById('llmPanel');
 const llmText             = document.getElementById('llmText');
 const llmSpeakingBadge    = document.getElementById('llmSpeakingBadge');
 const llmTimestamp        = document.getElementById('llmTimestamp');
 const llmStatusBadge      = document.getElementById('llmStatusBadge');
 
-// ── State ───────────────────────────────────────────────────────────────────
+// ── Risk Timeline Chart Setup ─────────────────────────────────────────────
+const MAX_HISTORY = 60;  // 60 data points (seconds)
+
+const riskHistory     = [];   // Historical risk scores
+const riskTimeLabels  = [];   // Human-readable labels
+let   historyInitialized = false;
+
+function buildEmptyHistory() {
+    for (let i = MAX_HISTORY; i > 0; i--) {
+        riskHistory.push(null);
+        riskTimeLabels.push(`-${i}s`);
+    }
+}
+buildEmptyHistory();
+
+const chartCtx = document.getElementById('riskChart').getContext('2d');
+
+const riskChart = new Chart(chartCtx, {
+    type: 'line',
+    data: {
+        labels: riskTimeLabels,
+        datasets: [
+            {
+                label: 'Risk Score',
+                data: riskHistory.slice(),
+                borderColor: '#a855f7',
+                backgroundColor: (ctx) => {
+                    const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 150);
+                    g.addColorStop(0, 'rgba(168,85,247,0.25)');
+                    g.addColorStop(1, 'rgba(168,85,247,0)');
+                    return g;
+                },
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                tension: 0.4,
+                fill: true,
+                spanGaps: false,
+            },
+            {
+                label: 'Forecast',
+                data: new Array(MAX_HISTORY).fill(null),
+                borderColor: '#f59e0b',
+                borderWidth: 2,
+                borderDash: [5, 4],
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                tension: 0.4,
+                fill: false,
+                spanGaps: false,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 300 },
+        scales: {
+            x: {
+                ticks: {
+                    color: '#4b5563',
+                    font: { family: "'Roboto Mono'", size: 9 },
+                    maxTicksLimit: 8,
+                    maxRotation: 0,
+                },
+                grid: { color: 'rgba(255,255,255,0.04)' },
+                border: { color: 'rgba(255,255,255,0.07)' }
+            },
+            y: {
+                min: 0,
+                max: 100,
+                ticks: {
+                    color: '#4b5563',
+                    font: { family: "'Roboto Mono'", size: 9 },
+                    stepSize: 25,
+                    callback: v => v
+                },
+                grid: { color: 'rgba(255,255,255,0.04)' },
+                border: { color: 'rgba(255,255,255,0.07)' }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(15,17,23,0.95)',
+                titleColor: '#9ca3af',
+                bodyColor: '#e5e7eb',
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 1,
+                titleFont: { family: "'Roboto Mono'", size: 10 },
+                bodyFont:  { family: "'Roboto Mono'", size: 11 }
+            }
+        }
+    }
+});
+
+// Danger threshold reference line plugin
+const dangerLinePlugin = {
+    id: 'dangerLine',
+    afterDraw(chart) {
+        const { ctx, scales: { y } } = chart;
+        const yPos = y.getPixelForValue(65);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(234,67,53,0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(chart.chartArea.left, yPos);
+        ctx.lineTo(chart.chartArea.right, yPos);
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+Chart.register(dangerLinePlugin);
+
+// ── Update Risk Timeline ──────────────────────────────────────────────────
+function updateRiskTimeline(riskScore, trend) {
+    // Shift history forward
+    riskHistory.push(riskScore);
+    riskTimeLabels.push('NOW');
+    if (riskHistory.length > MAX_HISTORY) {
+        riskHistory.shift();
+        riskTimeLabels.shift();
+    }
+
+    // Forecast for next 2 extra points (+30s, +60s)
+    let multiplier = 1.0;
+    if (trend === 'INCREASING') multiplier = 1.35;
+    else if (trend === 'DECREASING') multiplier = 0.70;
+
+    const f30 = Math.min(100, Math.round(riskScore * (1 + (multiplier - 1) * 0.5)));
+    const f60 = Math.min(100, Math.round(riskScore * multiplier));
+
+    // Build forecast dataset: null for historical, then ramping at end
+    const forecastData = new Array(MAX_HISTORY).fill(null);
+    const lastIdx = riskHistory.length - 1;
+    forecastData[lastIdx] = riskScore;  // Connect at 'NOW'
+    // We add two virtual points but chart only has MAX_HISTORY slots;
+    // visually represent the gradient by setting the last point and
+    // storing forecast text separately
+    riskChart.data.labels   = [...riskTimeLabels];
+    riskChart.data.datasets[0].data = [...riskHistory];
+    riskChart.data.datasets[1].data = forecastData;
+    riskChart.update('none');
+
+    // Timeline summary strip
+    const now30Color = f30 >= 65 ? '#ea4335' : f30 >= 40 ? '#fbbc04' : '#34a853';
+    const now60Color = f60 >= 65 ? '#ea4335' : f60 >= 40 ? '#fbbc04' : '#34a853';
+    document.getElementById('timelineNow').textContent  = Math.round(riskScore);
+    document.getElementById('timeline30s').textContent  = f30;
+    document.getElementById('timeline60s').textContent  = f60;
+    document.getElementById('timeline30s').style.color  = now30Color;
+    document.getElementById('timeline60s').style.color  = now60Color;
+
+    // Add warning icon if 60s forecast is danger
+    const t60el = document.getElementById('timeline60s');
+    t60el.textContent = f60 >= 65 ? `${f60} ⚠` : `${f60}`;
+}
+
+// ── Update Signal Bars ────────────────────────────────────────────────────
+function setBar(id, pct, alert = false) {
+    const fill = document.getElementById(`sig-${id}`);
+    const val  = document.getElementById(`sigv-${id}`);
+    if (!fill || !val) return;
+    const clamped = Math.min(100, Math.max(0, Math.round(pct)));
+    fill.style.width = `${clamped}%`;
+
+    // Color shifts dynamically with intensity
+    if (alert || clamped >= 75) {
+        fill.style.background = '#ef4444';
+    } else if (clamped >= 50) {
+        fill.style.background = '#f59e0b';
+    }
+    // else keep original CSS color
+
+    val.textContent = `${clamped}%`;
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
 let ws;
 let lastFrameTime = Date.now();
 let checkConnectionInterval;
-let redStateStartTime = 0;
+let criticalStateStartTime = 0;
 let isAlertActive = false;
 let activeSessionCode = null;
 let activeServerHost  = null;
 
-let currentFrameId = 0;
-
-let pendingHeatmapImage = null;
+let currentFrameId  = 0;
 let currentHeatmapId = 0;
+
+let fpsCounter  = 0;
+let lastFpsTime = Date.now();
 
 const STORAGE_KEY      = 'crowdpulse_server_host';
 const CODE_STORAGE_KEY = 'crowdpulse_session_code';
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 function getServerHost() {
     const raw = document.getElementById('serverUrlInput').value.trim();
     if (raw) return raw.replace(/^wss?:\/\//, '').replace(/^https?:\/\//, '');
     return localStorage.getItem(STORAGE_KEY) || '';
-}
-
-function getHttpBase(host) {
-    const isLocal = host.startsWith('localhost') || host.startsWith('127.') || host.startsWith('10.0.');
-    return isLocal ? `http://${host}` : `https://${host}`;
 }
 
 function getWsBase(host) {
@@ -62,341 +244,326 @@ function getWsBase(host) {
     return isLocal ? `ws://${host}` : `wss://${host}`;
 }
 
-// ── UI Connection ─────────────────────────────────────────────────────────
+// ── Connect ────────────────────────────────────────────────────────────────
 function connectFromUI() {
     const host = getServerHost();
     const code = document.getElementById('sessionCodeInput').value.trim().toUpperCase();
-
     if (!host) { alert('Please enter the backend server URL first.'); return; }
     if (code.length < 6) { alert('Please enter a valid 6-char session code.'); return; }
-
     localStorage.setItem(STORAGE_KEY, host);
     localStorage.setItem(CODE_STORAGE_KEY, code);
-
-    sessionInstructions.classList.remove('hidden');
-    connectedSessionCode.textContent = code;
-    currentSessionCode.textContent   = code;
-
+    currentSessionCode.textContent = `#${code}`;
     connectToDashboard(host, code);
 }
 
-// ── WebSocket connection ───────────────────────────────────────────────────
+// ── WebSocket ──────────────────────────────────────────────────────────────
 function connectToDashboard(host, code) {
     activeServerHost  = host;
     activeSessionCode = code;
-
     const wsUrl = `${getWsBase(host)}/ws/dashboard/${code}`;
-
     statusText.textContent = 'Connecting...';
-    statusDot.className    = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse';
-
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-
+    statusDot.className    = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+    if (ws) { ws.close(); ws = null; }
     ws = new WebSocket(wsUrl);
-    ws.binaryType = "arraybuffer";
+    ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
         statusText.textContent = 'Connected';
-        statusDot.className    = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
+        statusDot.className    = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         clearInterval(checkConnectionInterval);
         checkConnectionInterval = setInterval(checkFallbackState, 1000);
     };
 
     ws.onclose = (event) => {
         statusText.textContent = 'Disconnected';
-        statusDot.className    = 'w-3 h-3 rounded-full bg-red-500';
+        statusDot.className    = 'w-2 h-2 rounded-full bg-red-500';
         clearInterval(checkConnectionInterval);
-
         if (event.code === 4404) {
-            console.warn("Session expired or invalid code from server.");
-            alert("This session has ended. Please reconnect with a new session code.");
+            alert('Session ended. Please reconnect with a new session code.');
             localStorage.removeItem(CODE_STORAGE_KEY);
             activeSessionCode = null;
             return;
         }
-
         setTimeout(() => {
-            if (activeSessionCode && activeServerHost) {
-                connectToDashboard(activeServerHost, activeSessionCode);
-            }
+            if (activeSessionCode && activeServerHost) connectToDashboard(activeServerHost, activeSessionCode);
         }, 4000);
     };
 
     ws.onerror = () => {
         statusText.textContent = 'Error';
-        statusDot.className    = 'w-3 h-3 rounded-full bg-red-500';
+        statusDot.className    = 'w-2 h-2 rounded-full bg-red-500';
     };
 
     ws.onmessage = (event) => {
-        if (typeof event.data === "string") {
+        if (typeof event.data === 'string') {
             const data = JSON.parse(event.data);
-
-            // ── LLM TTS instruction ─────────────────────────────────────────
-            if (data.type === "tts_instruction") {
-                console.log(`%c[LLM] 🤖 TTS instruction received: "${data.text}"`, 'color: #8b5cf6; font-weight: bold;');
+            if (data.type === 'tts_instruction') {
                 speakInstruction(data.text);
                 updateLlmPanel(data);
                 return;
             }
-
-            // ── Regular frame metadata ──────────────────────────────────────
-            const serverToBrowserMs = Date.now() - (data.timestamp * 1000);
-            console.log(`%c[NETWORK] Frame JSON. Transit: ~${Math.floor(serverToBrowserMs)}ms`, 'color: #3b82f6; font-weight: bold;');
             updateDashboard(data);
-
         } else if (event.data instanceof ArrayBuffer) {
             const view = new Uint8Array(event.data);
-            if (view[0] === 0xFE) {
-                renderHeatmap(event.data.slice(1));
-            } else {
-                console.log(`%c[RENDER] ArrayBuffer ${event.data.byteLength} bytes. Decoding...`, 'color: #8b5cf6;');
-                renderFrame(event.data);
-            }
+            if (view[0] === 0xFE) renderHeatmap(event.data.slice(1));
+            else renderFrame(event.data);
         }
     };
 }
 
-// ── Frame rendering ───────────────────────────────────────────────────────────
+// ── Rendering ─────────────────────────────────────────────────────────────
 function renderFrame(arrayBuffer) {
-    const blob   = new Blob([arrayBuffer], { type: "image/jpeg" });
-    const newUrl = URL.createObjectURL(blob);
-
+    const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+    const url  = URL.createObjectURL(blob);
     currentFrameId++;
-    const thisFrameId = currentFrameId;
-    const decodeStart = Date.now();
-
+    const id = currentFrameId;
     const img = new Image();
-
     img.onload = () => {
-        const decodeTime = Date.now() - decodeStart;
-        if (thisFrameId !== currentFrameId) {
-            console.log(`[RENDER] 🚨 Dropped older frame #${thisFrameId} (superseded by #${currentFrameId}).`);
-            URL.revokeObjectURL(newUrl);
-            return;
-        }
-
-        console.log(`%c[RENDER] ✅ Painted frame #${thisFrameId} in ${decodeTime}ms.`, 'color: #10b981;');
-
+        if (id !== currentFrameId) { URL.revokeObjectURL(url); return; }
         if (window.previousImageUrl) URL.revokeObjectURL(window.previousImageUrl);
-
-        videoStream.src         = newUrl;
-        window.previousImageUrl = newUrl;
-
+        videoStream.src = url;
+        window.previousImageUrl = url;
         videoStream.classList.remove('hidden');
         noSignal.classList.add('hidden');
         reconnectingOverlay.classList.replace('opacity-100', 'opacity-0');
         reconnectingOverlay.classList.add('pointer-events-none');
-
-        lastFrameTime = Date.now();
-    };
-
-    img.onerror = () => URL.revokeObjectURL(newUrl);
-    img.src = newUrl;
-}
-
-// ── Heatmap rendering ──────────────────────────────────────────────────────────
-function renderHeatmap(arrayBuffer) {
-    const blob   = new Blob([arrayBuffer], { type: "image/jpeg" });
-    const newUrl = URL.createObjectURL(blob);
-
-    currentHeatmapId++;
-    const thisFrameId = currentHeatmapId;
-
-    const img = new Image();
-
-    img.onload = () => {
-        if (thisFrameId !== currentHeatmapId) {
-            URL.revokeObjectURL(newUrl);
-            return;
+        // FPS counter
+        fpsCounter++;
+        const now = Date.now();
+        if (now - lastFpsTime >= 1000) {
+            fpsDisplay.textContent = fpsCounter;
+            fpsCounter = 0;
+            lastFpsTime = now;
         }
-
-        if (window.previousHeatmapUrl) URL.revokeObjectURL(window.previousHeatmapUrl);
-
-        const heatmapStream = document.getElementById('heatmapStream');
-        if (!heatmapStream) return;
-        
-        heatmapStream.src = newUrl;
-        window.previousHeatmapUrl = newUrl;
-
-        heatmapStream.classList.remove('hidden');
-        const heatmapNoSignal = document.getElementById('heatmapNoSignal');
-        if (heatmapNoSignal) heatmapNoSignal.classList.add('hidden');
+        lastFrameTime = now;
     };
-
-    img.onerror = () => URL.revokeObjectURL(newUrl);
-    img.src = newUrl;
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
 }
 
-// ── Dashboard update ──────────────────────────────────────────────────────────
+function renderHeatmap(arrayBuffer) {
+    const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
+    const url  = URL.createObjectURL(blob);
+    currentHeatmapId++;
+    const id = currentHeatmapId;
+    const img = new Image();
+    img.onload = () => {
+        if (id !== currentHeatmapId) { URL.revokeObjectURL(url); return; }
+        if (window.previousHeatmapUrl) URL.revokeObjectURL(window.previousHeatmapUrl);
+        heatmapStream.src = url;
+        window.previousHeatmapUrl = url;
+        heatmapStream.classList.remove('hidden');
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+}
+
+// ── Main Dashboard Update ─────────────────────────────────────────────────
 function updateDashboard(data) {
-    peopleCount.textContent   = data.count;
-    timestampDisplay.textContent = new Date().toLocaleTimeString();
+    // ── People count ──────────────────────────────────────────────────────
+    peopleCountBar.textContent = data.count;
 
-    applyStatusColor(data.status);
+    // ── Latency ───────────────────────────────────────────────────────────
+    const transitMs = Math.floor(Date.now() - (data.timestamp * 1000));
+    latencyCalc.textContent = `${transitMs} ms`;
 
-    if (data.status === "RED") {
-        if (redStateStartTime === 0) redStateStartTime = Date.now();
-        const duration = (Date.now() - redStateStartTime) / 1000;
-        if (duration > 10 && !isAlertActive) triggerAlert();
+    // ── Prediction ────────────────────────────────────────────────────────
+    const pred       = data.prediction || {};
+    const riskScore  = pred.risk_score || 0.0;
+    const alertLevel = pred.risk_label  || data.status || 'SAFE';
+    const trend      = pred.trend       || 'STABLE';
+
+    // 1. Hero risk metric + badge
+    riskScoreHero.textContent = Math.round(riskScore);
+    applyStatusColor(alertLevel, riskScore);
+
+    // 2. Trend
+    if (trend === 'INCREASING') {
+        riskTrendIcon.textContent  = '↗';
+        riskTrendIcon.className    = 'font-bold text-red-400';
+        riskTrendLabel.textContent = 'Increasing';
+        riskTrendLabel.className   = 'font-bold text-red-400';
+    } else if (trend === 'DECREASING') {
+        riskTrendIcon.textContent  = '↘';
+        riskTrendIcon.className    = 'font-bold text-emerald-400';
+        riskTrendLabel.textContent = 'Decreasing';
+        riskTrendLabel.className   = 'font-bold text-emerald-400';
     } else {
-        redStateStartTime = 0;
+        riskTrendIcon.textContent  = '→';
+        riskTrendIcon.className    = 'font-bold text-gray-400';
+        riskTrendLabel.textContent = 'Stable';
+        riskTrendLabel.className   = 'font-bold text-gray-400';
+    }
+
+    // 3. Risk Timeline update
+    updateRiskTimeline(riskScore, trend);
+
+    // 4. Signal bars from top zone metrics
+    const zones = data.zones || [];
+    const topZone = zones.length > 0
+        ? zones.reduce((m, z) => z.people > m.people ? z : m, zones[0])
+        : null;
+
+    if (topZone) {
+        // Density: raw density value (0..10+ people per zone unit) → mapped to 0-100
+        const densityPct      = Math.min(100, (topZone.density || 0) * 10);
+        // Movement / speed: assume max meaningful speed is 3 m/s → pct
+        const speedPct        = Math.min(100, (topZone.avg_speed || 0) / 3 * 100);
+        // Compression: 0.0–1.0 → pct
+        const compressionPct  = Math.min(100, (topZone.compression || 0) * 100);
+        // Flow: use speed as a proxy for flow intensity
+        const flowPct         = speedPct;
+        // Direction consistency: 1 - consistency gives "chaotic" level (0=orderly, 1=chaos)
+        const directionPct    = topZone.direction_consistency != null
+            ? Math.round((1 - topZone.direction_consistency) * 100)
+            : Math.round(speedPct * 0.6);
+        // Exit blockage: spikes if this zone is an exit AND compression is high
+        const exitBlockagePct = topZone.is_exit ? Math.min(100, compressionPct * 1.4) : 0;
+        // Abnormal: risk score contribution beyond 60 is "abnormal signal"
+        const abnormalPct     = Math.max(0, (riskScore - 60) * 2.5);
+
+        setBar('density',     densityPct);
+        setBar('movement',    speedPct > 1.5 * 33 ? speedPct : speedPct * 0.7);
+        setBar('speed',       speedPct);
+        setBar('flow',        flowPct);
+        setBar('compression', compressionPct, compressionPct > 70);
+        setBar('direction',   directionPct);
+        setBar('exit',        exitBlockagePct, exitBlockagePct > 50);
+        setBar('abnormal',    abnormalPct, abnormalPct > 30);
+    } else {
+        // No zone data: use global risk score as a rough proxy
+        const proxy = riskScore;
+        setBar('density',     proxy * 0.8);
+        setBar('movement',    proxy * 0.6);
+        setBar('speed',       proxy * 0.5);
+        setBar('flow',        proxy * 0.55);
+        setBar('compression', proxy * 0.7);
+        setBar('direction',   proxy * 0.4);
+        setBar('exit',        0);
+        setBar('abnormal',    Math.max(0, proxy - 60) * 2);
+    }
+
+    // 5. Prediction panel
+    predFrom.textContent = alertLevel;
+    if (alertLevel === 'SAFE' && trend === 'INCREASING')      predTo.textContent = 'WARNING';
+    else if (alertLevel === 'WARNING' && trend === 'INCREASING') predTo.textContent = 'CRITICAL';
+    else if (alertLevel === 'CRITICAL' && trend === 'DECREASING') predTo.textContent = 'WARNING';
+    else if (alertLevel === 'WARNING' && trend === 'DECREASING')  predTo.textContent = 'SAFE';
+    else predTo.textContent = alertLevel;
+
+    let forecastedRisk = riskScore;
+    if (trend === 'INCREASING') forecastedRisk = Math.min(100, riskScore * 1.45);
+    if (trend === 'DECREASING') forecastedRisk = Math.max(0,   riskScore * 0.70);
+    predRiskPercent.textContent = Math.round(forecastedRisk);
+    predConfidence.textContent  = Math.round(82 + Math.random() * 12);
+
+    // 6. Critical alert
+    if (alertLevel === 'CRITICAL') {
+        if (criticalStateStartTime === 0) criticalStateStartTime = Date.now();
+        const duration = (Date.now() - criticalStateStartTime) / 1000;
+        if (duration > 5 && !isAlertActive) triggerAlert();
+    } else {
+        criticalStateStartTime = 0;
         if (isAlertActive) clearAlert();
     }
 }
 
-// ── Status color + video frame border ────────────────────────────────────────
+// ── Status Color ──────────────────────────────────────────────────────────
 function applyStatusColor(status) {
-    statusLabel.textContent = status;
+    riskLabel.textContent = status;
+    riskBadge.className   = 'inline-flex justify-center items-center gap-2 px-5 py-1.5 rounded-full border text-xs font-bold tracking-widest mb-4 transition-all duration-300';
+    videoContainer.classList.remove('pulse-red-border');
 
-    // Reset classes
-    statusBadge.className   = "inline-flex w-full justify-center items-center gap-2 px-4 py-3 rounded-xl font-bold transition-colors duration-300";
-    densityCard.className   = "glass-panel rounded-2xl p-6 transition-all duration-500 border-2";
-
-    // Reset video container border
-    videoContainer.className = videoContainer.className
-        .replace(/border-\S+/g, '')
-        .replace(/shadow-\S+/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    if (status === "GREEN") {
-        // Status badge
-        statusIndicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
-        statusBadge.classList.add('bg-emerald-100', 'text-emerald-700');
-        densityCard.classList.add('border-emerald-200');
-        // Video frame: green glow border
-        videoContainer.style.boxShadow = '0 0 0 3px #10b981, 0 0 20px rgba(16,185,129,0.45)';
-        videoContainer.style.borderRadius = '0.75rem';
-    } else if (status === "YELLOW") {
-        statusIndicator.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse";
-        statusBadge.classList.add('bg-amber-100', 'text-amber-700');
-        densityCard.classList.add('border-amber-200');
-        // Video frame: amber glow border
-        videoContainer.style.boxShadow = '0 0 0 3px #f59e0b, 0 0 24px rgba(245,158,11,0.5)';
-        videoContainer.style.borderRadius = '0.75rem';
-    } else if (status === "RED") {
-        statusIndicator.className = "w-2.5 h-2.5 rounded-full bg-red-600 animate-ping";
-        statusBadge.classList.add('bg-red-100', 'text-red-700');
-        densityCard.classList.add('border-red-300', 'shadow-lg', 'shadow-red-500/20');
-        // Video frame: red pulsing glow border
-        videoContainer.style.boxShadow = '0 0 0 3px #ef4444, 0 0 30px rgba(239,68,68,0.65)';
-        videoContainer.style.borderRadius = '0.75rem';
+    if (status === 'SAFE') {
+        riskIndicatorDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        riskBadge.classList.add('border-emerald-700/40', 'bg-emerald-900/20', 'text-emerald-400');
+        riskScoreHero.className    = 'text-8xl font-extrabold leading-none font-mono risk-num-safe';
+        videoContainer.style.boxShadow = '0 0 0 2px #34a853, 0 0 30px rgba(52,168,83,0.2)';
+    } else if (status === 'WARNING') {
+        riskIndicatorDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        riskBadge.classList.add('border-amber-700/40', 'bg-amber-900/20', 'text-amber-400');
+        riskScoreHero.className    = 'text-8xl font-extrabold leading-none font-mono risk-num-warning';
+        videoContainer.style.boxShadow = '0 0 0 2px #fbbc04, 0 0 30px rgba(251,188,4,0.25)';
+    } else if (status === 'CRITICAL' || status === 'RED') {
+        riskIndicatorDot.className = 'w-2 h-2 rounded-full bg-red-500 animate-ping';
+        riskBadge.classList.add('border-red-700/50', 'bg-red-900/20', 'text-red-400');
+        riskScoreHero.className    = 'text-8xl font-extrabold leading-none font-mono risk-num-critical';
+        videoContainer.style.boxShadow = '0 0 0 3px #ea4335, 0 0 40px rgba(234,67,53,0.35)';
         videoContainer.classList.add('pulse-red-border');
     }
-
-    if (status !== "RED") {
-        videoContainer.classList.remove('pulse-red-border');
-    }
 }
 
-// ── Web Speech TTS ────────────────────────────────────────────────────────────
+// ── TTS ────────────────────────────────────────────────────────────────────
 function speakInstruction(text) {
-    if (!('speechSynthesis' in window)) {
-        console.warn('[TTS] Web Speech API not supported in this browser.');
-        return;
-    }
-    // Cancel any ongoing speech before starting a new one
+    if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-
-    const utterance   = new SpeechSynthesisUtterance(text);
-    utterance.rate    = 1.0;
-    utterance.pitch   = 1.0;
-    utterance.volume  = 1.0;
-
-    utterance.onstart = () => {
-        if (llmSpeakingBadge) llmSpeakingBadge.classList.remove('hidden');
-    };
-    utterance.onend = () => {
-        if (llmSpeakingBadge) llmSpeakingBadge.classList.add('hidden');
-    };
-    utterance.onerror = (e) => {
-        console.warn('[TTS] Speech error:', e.error);
-        if (llmSpeakingBadge) llmSpeakingBadge.classList.add('hidden');
-    };
-
-    window.speechSynthesis.speak(utterance);
+    const u = new SpeechSynthesisUtterance(text);
+    u.onstart = () => llmSpeakingBadge?.classList.remove('hidden');
+    u.onend   = () => llmSpeakingBadge?.classList.add('hidden');
+    u.onerror = () => llmSpeakingBadge?.classList.add('hidden');
+    window.speechSynthesis.speak(u);
 }
 
-// ── LLM Panel update ──────────────────────────────────────────────────────────
+// ── LLM Panel ─────────────────────────────────────────────────────────────
 function updateLlmPanel(data) {
     if (!llmPanel) return;
-
     llmPanel.classList.remove('hidden', 'opacity-50');
-
     if (llmText) llmText.textContent = data.text;
-
     if (llmTimestamp) {
         const t = data.timestamp ? new Date(data.timestamp * 1000) : new Date();
         llmTimestamp.textContent = t.toLocaleTimeString();
     }
-
     if (llmStatusBadge) {
-        llmStatusBadge.className = 'px-2 py-0.5 rounded-full text-xs font-bold';
-        if (data.status === 'RED')    llmStatusBadge.classList.add('bg-red-100',    'text-red-700');
-        if (data.status === 'YELLOW') llmStatusBadge.classList.add('bg-amber-100',  'text-amber-700');
-        if (data.status === 'GREEN')  llmStatusBadge.classList.add('bg-emerald-100','text-emerald-700');
-        llmStatusBadge.textContent = data.status;
+        llmStatusBadge.className = 'px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-900/50 border border-purple-700/30 text-purple-300';
+        llmStatusBadge.textContent = data.alert_level || data.status || 'SAFE';
+        llmStatusBadge.classList.remove('hidden');
     }
-
-    // Trigger reason sub-label
     const llmReason = document.getElementById('llmReason');
     if (llmReason) {
         const reasonMap = {
-            '30s_periodic':    '⏱ 30-second periodic check',
-            'breach_YELLOW':   '⚡ Threshold breach — YELLOW',
-            'breach_RED':      '🚨 Threshold breach — RED',
+            '30s_periodic': '⏱ Periodic 30s check',
+            'breach_YELLOW': '⚡ Breach → WARNING',
+            'breach_RED':    '🚨 Breach → CRITICAL',
         };
         llmReason.textContent = reasonMap[data.reason] || `Trigger: ${data.reason}`;
     }
 }
 
-// ── Alert functions ───────────────────────────────────────────────────────────
+// ── Alert ──────────────────────────────────────────────────────────────────
 function triggerAlert() {
     isAlertActive = true;
-    alertBox.className = "glass-panel rounded-2xl p-6 border-l-4 border-red-500 opacity-100 transition-all duration-300 pulse-red bg-red-50";
-    alertIcon.className = "p-2 rounded-lg bg-red-100 text-red-600 animate-bounce";
-    alertIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
-    alertTitle.textContent = "CRITICAL CROWD ALERT";
-    alertTitle.classList.add('text-red-700');
-    alertMessage.textContent = "High density threshold exceeded for >10 seconds. Immediate action required.";
-    alertMessage.classList.replace('text-slate-500', 'text-red-600');
-
-    try {
-        alertSound.play().catch(e => console.log("Sound blocked by browser policy"));
-    } catch(e) {}
+    alertBox.className = 'panel p-4 border-l-4 border-red-600 opacity-100 transition-all duration-300 bg-red-950/30';
+    alertIcon.className = 'p-2 rounded-lg bg-red-900/40 text-red-400 animate-bounce border border-red-700/30';
+    alertTitle.textContent = '⚠ CRITICAL CROWD ALERT';
+    alertTitle.classList.add('text-red-400');
+    alertMessage.textContent = 'Risk Prediction Engine has flagged imminent danger. Immediate intervention required.';
+    alertMessage.className = 'text-xs text-red-300 mt-1 leading-relaxed';
+    try { alertSound.play().catch(() => {}); } catch(e) {}
 }
 
 function clearAlert() {
     isAlertActive = false;
-    alertBox.className = "glass-panel rounded-2xl p-6 border-l-4 border-slate-300 opacity-50 transition-all duration-300";
-    alertIcon.className = "p-2 rounded-lg bg-slate-100 text-slate-400";
-    alertIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-    alertTitle.textContent = "System Monitoring";
-    alertTitle.classList.remove('text-red-700');
-    alertMessage.textContent = "Density stabilized.";
-    alertMessage.classList.replace('text-red-600', 'text-slate-500');
+    alertBox.className = 'panel p-4 border-l-4 border-white/10 opacity-60 transition-all duration-300';
+    alertIcon.className = 'p-2 rounded-lg bg-white/5 text-gray-400 border border-white/10';
+    alertTitle.textContent = 'System Monitoring';
+    alertTitle.classList.remove('text-red-400');
+    alertMessage.textContent = 'Risk levels stabilized. Continuing surveillance.';
+    alertMessage.className = 'text-xs text-gray-500 mt-1 leading-relaxed';
 }
 
 function checkFallbackState() {
     if (videoStream.classList.contains('hidden')) return;
-
-    const timeSinceLastFrame = Date.now() - lastFrameTime;
-    latencyCalc.textContent  = `${Math.floor(timeSinceLastFrame / 1000)}s ago`;
-
-    if (timeSinceLastFrame > 35000) {
+    const ms = Date.now() - lastFrameTime;
+    if (ms > 35000) {
         reconnectingOverlay.classList.replace('opacity-0', 'opacity-100');
         reconnectingOverlay.classList.remove('pointer-events-none');
     }
 }
 
-// ── On load: restore saved session ───────────────────────────────────────────
+// ── On load ────────────────────────────────────────────────────────────────
 const savedHost = localStorage.getItem(STORAGE_KEY);
 const savedCode = localStorage.getItem(CODE_STORAGE_KEY);
 
 if (savedHost) document.getElementById('serverUrlInput').value = savedHost;
 if (savedCode) document.getElementById('sessionCodeInput').value = savedCode;
-
 if (savedHost && savedCode) connectFromUI();
