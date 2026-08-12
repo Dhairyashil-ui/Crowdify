@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies for OpenCV
+# Install system dependencies for OpenCV and C++ compilation
 RUN apt-get update && apt-get install -y \
     build-essential \
     libglib2.0-0 \
@@ -15,8 +15,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-# Pre-install numpy because 'lap' requires it at build time for its C++ extensions
-RUN pip install --no-cache-dir numpy
+# Pre-install numpy before 'lap' requires it at build time for its C++ extensions
+# Note: Pinning numpy<2.0.0 because lap fails to compile against the new numpy 2.x C-API.
+RUN pip install --no-cache-dir "numpy<2.0.0"
 
 RUN pip install --no-cache-dir -r requirements.txt
 
