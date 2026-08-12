@@ -15,10 +15,6 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-# Pre-install numpy before 'lap' requires it at build time for its C++ extensions
-# Note: Pinning numpy<2.0.0 because lap fails to compile against the new numpy 2.x C-API.
-RUN pip install --no-cache-dir "numpy<2.0.0"
-
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
