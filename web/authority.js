@@ -44,12 +44,12 @@ const ZONE_DEFS = [
     }
 ];
 
-// ── INITIAL ZONE STATES (demo baseline) ──────────────────────────────────
+// ── INITIAL ZONE STATES (empty baseline) ──────────────────────────────────
 const DEMO_BASE = {
-    A: { people: 342, density: 'MODERATE', compression: 45, movement: '→ DISPERSING', exitBlockage: 'LOW',      risk: 23, status: 'SAFE'     },
-    B: { people: 201, density: 'MODERATE', compression: 58, movement: '← CONVERGING', exitBlockage: 'MODERATE', risk: 51, status: 'WATCH'    },
-    C: { people: 183, density: 'HIGH',     compression: 82, movement: '→ EXIT',        exitBlockage: 'HIGH',     risk: 73, status: 'CRITICAL' },
-    D: { people:  87, density: 'LOW',      compression: 21, movement: '↓ INWARD',      exitBlockage: 'LOW',      risk: 12, status: 'SAFE'     }
+    A: { people: '--', density: '—', compression: '--', movement: '—', exitBlockage: '—', risk: 0, status: 'OFFLINE' },
+    B: { people: '--', density: '—', compression: '--', movement: '—', exitBlockage: '—', risk: 0, status: 'OFFLINE' },
+    C: { people: '--', density: '—', compression: '--', movement: '—', exitBlockage: '—', risk: 0, status: 'OFFLINE' },
+    D: { people: '--', density: '—', compression: '--', movement: '—', exitBlockage: '—', risk: 0, status: 'OFFLINE' }
 };
 
 // ── INCIDENT REPLAY DATA ─────────────────────────────────────────────────
@@ -97,8 +97,7 @@ let alertSecsLeft    = 60;
 let alertTimerInt    = null;
 let alertAcked       = false;
 let isLive           = false;
-let demoInt          = null;
-let demoTick         = 0;
+
 let pulsePhase       = 0;
 let replayStepIdx    = -1;
 let replayInt        = null;
@@ -123,7 +122,8 @@ function resizeCanvas() {
 function getZoneColor(status) {
     if (status === 'CRITICAL') return { fill: 'rgba(255,59,59,0.16)',   stroke: '#ff3b3b', glow: 'rgba(255,59,59,0.55)',  text: '#ff3b3b' };
     if (status === 'WATCH')    return { fill: 'rgba(255,170,0,0.14)',   stroke: '#ffaa00', glow: 'rgba(255,170,0,0.5)',   text: '#ffaa00' };
-    return                           { fill: 'rgba(0,230,118,0.11)',    stroke: '#00e676', glow: 'rgba(0,230,118,0.42)',  text: '#00e676' };
+    if (status === 'SAFE')     return { fill: 'rgba(0,230,118,0.11)',   stroke: '#00e676', glow: 'rgba(0,230,118,0.42)',  text: '#00e676' };
+    return { fill: 'rgba(255,255,255,0.02)', stroke: 'rgba(255,255,255,0.15)', glow: 'transparent', text: 'rgba(255,255,255,0.3)' };
 }
 
 function drawMap() {
@@ -131,11 +131,11 @@ function drawMap() {
     if (!W || !H) return;
 
     // Background
-    ctx.fillStyle = '#060a0f';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
 
     // Fine grid
-    ctx.strokeStyle = 'rgba(0,183,255,0.035)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
     for (let x = 0; x < W; x += 45) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
     for (let y = 0; y < H; y += 45) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
@@ -145,17 +145,17 @@ function drawMap() {
     const vx = ml, vy = mt, vw = W-ml-mr, vh = H-mt-mb;
 
     // Venue fill
-    ctx.fillStyle = 'rgba(0,183,255,0.012)';
+    ctx.fillStyle = 'rgba(255,255,255,0.015)';
     ctx.fillRect(vx, vy, vw, vh);
 
     // Venue walls
-    ctx.strokeStyle = 'rgba(0,183,255,0.22)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([]);
     ctx.strokeRect(vx, vy, vw, vh);
 
     // Internal partition lines (dashed)
-    ctx.strokeStyle = 'rgba(0,183,255,0.08)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.setLineDash([6, 10]);
     // vertical divider ~40%
@@ -166,7 +166,7 @@ function drawMap() {
 
     // Area labels (background)
     ctx.font = '600 10px Rajdhani, sans-serif';
-    ctx.fillStyle = 'rgba(0,183,255,0.16)';
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.textAlign = 'center';
     ctx.fillText('WEST WING', vx + vw*0.20, vy + vh*0.80);
     ctx.fillText('CENTRAL HALL', vx + vw*0.70, vy + vh*0.25);
@@ -188,7 +188,7 @@ function drawMap() {
 
 function drawWallMarker(ctx, x, y, label, isTop, isRight) {
     ctx.font = '600 9px Rajdhani, sans-serif';
-    ctx.fillStyle = 'rgba(74,122,155,0.55)';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.textAlign = isRight ? 'left' : 'center';
     const ox = isRight ? 6 : 0;
     const oy = isTop ? -5 : 13;
@@ -246,7 +246,7 @@ function drawZone(zone, state, cx, cy, r) {
 
     // Zone name
     ctx.font = `500 ${Math.max(8, r*0.22)}px Rajdhani, sans-serif`;
-    ctx.fillStyle = 'rgba(184,212,234,0.65)';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText(zone.name, cx, cy - glowR - 18);
 
     // People count inside circle
@@ -255,7 +255,7 @@ function drawZone(zone, state, cx, cy, r) {
         ctx.fillStyle = 'rgba(232,244,255,0.9)';
         ctx.fillText(state.people, cx, cy + 4);
         ctx.font = `500 ${Math.max(7, r*0.19)}px Rajdhani, sans-serif`;
-        ctx.fillStyle = 'rgba(63,104,128,0.85)';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fillText('people', cx, cy + 17);
     }
 
@@ -648,39 +648,7 @@ function startReplay() {
     }, 1100);
 }
 
-// ── DEMO SIMULATION ──────────────────────────────────────────────────────
-function runDemo() {
-    demoTick++;
-
-    // Realistic variance on each zone
-    Object.keys(zoneStates).forEach(id => {
-        const base  = DEMO_BASE[id];
-        const state = zoneStates[id];
-        const phase = demoTick * 0.18 + id.charCodeAt(0);
-        state.people      = Math.max(0, base.people + Math.round(Math.sin(phase) * 9));
-        state.compression = Math.min(100, Math.max(0, base.compression + Math.sin(phase * 0.9) * 5));
-        state.risk        = Math.min(100, Math.max(0, base.risk + Math.sin(phase * 0.7) * 7));
-    });
-
-    // Trigger critical alert after ~10s in demo
-    if (demoTick === 5 && !alertAcked && zoneStates['C'].status === 'CRITICAL') {
-        triggerCriticalAlert('C');
-    }
-
-    updateHeader();
-    updateIncidentsList();
-    if (selectedZoneId) openZoneDetail(selectedZoneId);
-}
-
-function startDemo() {
-    if (demoInt) return;
-    demoInt = setInterval(runDemo, 2000);
-}
-
-function stopDemo() {
-    clearInterval(demoInt);
-    demoInt = null;
-}
+// ── DEMO SIMULATION REMOVED FOR PROFESSIONAL UI ───────────────────────────
 
 // ── WEBSOCKET CONNECTION ─────────────────────────────────────────────────
 function authorityConnect() {
@@ -706,15 +674,15 @@ function authorityConnect() {
     ws.onopen = () => {
         setConnStatus('live');
         isLive = true;
-        stopDemo();
-        document.getElementById('demoPill').classList.add('hidden');
     };
 
     ws.onclose = () => {
         setConnStatus('offline');
         isLive = false;
-        startDemo();
-        document.getElementById('demoPill').classList.remove('hidden');
+        // Reset to offline state gracefully
+        zoneStates = JSON.parse(JSON.stringify(DEMO_BASE));
+        updateHeader();
+        updateIncidentsList();
         setTimeout(() => { if (!isLive) authorityConnect(); }, 5000);
     };
 
@@ -798,11 +766,10 @@ window.addEventListener('load', () => {
     if (sh) document.getElementById('authUrl').value  = sh;
     if (sc) document.getElementById('authCode').value = sc;
 
-    // Start demo mode
+    // Initial offline state render
     updateHeader();
     updateIncidentsList();
     loadReplay('204');
-    startDemo();
 
     // Resize canvas on window resize
     let resizeDebounce;
