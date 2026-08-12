@@ -150,13 +150,13 @@
                 </div>
                 <div class="hidden md:flex flex-col gap-1 border-l border-white/10 pl-5 ml-1">
                     <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot"></span>
-                        <span class="text-[10px] font-bold text-emerald-400 tracking-wide">SYSTEM ONLINE</span>
+                        <span id="devSystemDot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+                        <span id="devSystemStatus" class="text-[10px] font-bold text-gray-500 tracking-wide">SYSTEM OFFLINE</span>
                     </div>
-                    <div class="flex items-center gap-3 text-[10px] text-gray-500 font-mono">
-                        <span>Camera: CAM-04</span>
+                    <div class="flex items-center gap-3 text-[10px] text-gray-600 font-mono">
+                        <span>Cam: <span id="devCamId" class="text-gray-500">—</span></span>
                         <span class="opacity-40">|</span>
-                        <span>Location: Main Gate</span>
+                        <span>Location: <span id="devLocation" class="text-gray-500">—</span></span>
                         <span class="opacity-40">|</span>
                         <span>Session: <span id="currentSessionCode" class="text-blue-400 font-bold">#---</span></span>
                     </div>
@@ -278,7 +278,7 @@
                         </div>
                         <div>
                             <h3 id="alertTitle" class="text-sm font-bold text-gray-200">System Monitoring</h3>
-                            <p id="alertMessage" class="text-xs text-gray-500 mt-1 leading-relaxed">Analyzing crowd signals and waiting for camera input...</p>
+                            <p id="alertMessage" class="text-xs text-gray-500 mt-1 leading-relaxed">Waiting for camera source — connect to a session to begin monitoring.</p>
                         </div>
                     </div>
                 </div>
@@ -376,7 +376,7 @@
                             </div>
                             <div class="bg-white/4 p-3 rounded-lg border border-white/5 text-center">
                                 <p class="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">Confidence</p>
-                                <p class="text-xl font-bold font-mono text-white"><span id="predConfidence">87</span>%</p>
+                                <p class="text-xl font-bold font-mono text-white"><span id="predConfidence">--</span>%</p>
                             </div>
                         </div>
                     </div>

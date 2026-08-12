@@ -8,31 +8,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
     :root {
-        --bg:           #000000;
-        --surface:      #050505;
-        --border:       rgba(255,255,255,0.12);
-        --border-mid:   rgba(255,255,255,0.22);
+        --bg:           #060a0f;
+        --surface:      #08101e;
+        --border:       rgba(0,183,255,0.10);
+        --border-mid:   rgba(0,183,255,0.22);
         --text:         #b8d4ea;
-        --text-dim:     #637381;
-        --text-bright:  #ffffff;
+        --text-dim:     #3f6880;
+        --text-bright:  #e8f4ff;
         --critical:     #ff3b3b;
         --crit-bg:      rgba(255,59,59,0.06);
-        --crit-border:  rgba(255,59,59,0.3);
+        --crit-border:  rgba(255,59,59,0.28);
         --watch:        #ffaa00;
         --watch-bg:     rgba(255,170,0,0.06);
-        --watch-border: rgba(255,170,0,0.3);
+        --watch-border: rgba(255,170,0,0.28);
         --safe:         #00e676;
         --safe-bg:      rgba(0,230,118,0.06);
-        --safe-border:  rgba(0,230,118,0.3);
-        --accent:       #ffffff;
+        --safe-border:  rgba(0,230,118,0.28);
+        --accent:       #00b7ff;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; overflow:hidden; }
     body {
         background-color: var(--bg);
         background-image:
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            linear-gradient(rgba(0,183,255,0.022) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,183,255,0.022) 1px, transparent 1px);
         background-size: 50px 50px;
         color: var(--text);
         font-family: 'Rajdhani', sans-serif;
@@ -47,7 +47,7 @@
     /* ── HEADER ── */
     .cmd-hdr {
         flex-shrink:0; height:72px;
-        background: rgba(0,0,0,0.97);
+        background: rgba(6,10,15,0.97);
         border-bottom: 1px solid var(--border-mid);
         backdrop-filter: blur(20px);
         padding: 0 1.5rem;
@@ -59,8 +59,8 @@
         width:38px; height:38px;
         border:1.5px solid var(--accent); border-radius:8px;
         display:flex; align-items:center; justify-content:center;
-        background: rgba(255,255,255,0.05);
-        box-shadow: 0 0 18px rgba(255,255,255,0.1), inset 0 0 10px rgba(255,255,255,0.05);
+        background: rgba(0,183,255,0.07);
+        box-shadow: 0 0 18px rgba(0,183,255,0.18), inset 0 0 10px rgba(0,183,255,0.05);
     }
     .brand-icon svg { width:20px; height:20px; fill:var(--accent); }
     .brand-sub  { font-size:0.52rem; font-weight:700; letter-spacing:0.28em; color:var(--accent); line-height:1; }
@@ -121,7 +121,7 @@
     }
     .conn-bar {
         flex-shrink:0; display:flex; align-items:center; gap:0.7rem;
-        padding:0.42rem 1rem; background:rgba(255,255,255,0.03);
+        padding:0.42rem 1rem; background:rgba(0,183,255,0.03);
         border-bottom:1px solid var(--border); flex-wrap:wrap;
     }
     .cb-lbl { font-size:0.56rem; font-weight:700; letter-spacing:0.16em; color:var(--text-dim); flex-shrink:0; }
@@ -135,22 +135,18 @@
     .cb-in::placeholder { color:var(--text-dim); }
     .cb-btn {
         padding:0.26rem 0.72rem;
-        background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.36);
-        color:var(--text-bright); border-radius:3px;
+        background:rgba(0,183,255,0.12); border:1px solid rgba(0,183,255,0.36);
+        color:var(--accent); border-radius:3px;
         font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.66rem; letter-spacing:0.1em;
         cursor:pointer; transition:all 0.2s;
     }
-    .cb-btn:hover { background:rgba(255,255,255,0.22); }
+    .cb-btn:hover { background:rgba(0,183,255,0.22); }
     .cst { display:flex; align-items:center; gap:0.38rem; }
     .cdot { width:7px; height:7px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
     .cdot.live    { background:var(--safe);     box-shadow:0 0 8px var(--safe); }
     .cdot.linking { background:var(--watch);    animation:syspulse 0.7s ease-in-out infinite; }
     .cdot.err     { background:var(--critical); }
     .ctxt { font-size:0.63rem; font-family:'Share Tech Mono',monospace; color:var(--text-dim); }
-    .demo-pill {
-        padding:0.14rem 0.52rem; border:1px solid rgba(255,170,0,0.36); border-radius:2px;
-        background:rgba(255,170,0,0.07); color:var(--watch); font-size:0.56rem; font-weight:700; letter-spacing:0.1em;
-    }
 
     .map-panel {
         flex:1; min-height:0; display:flex; flex-direction:column;
@@ -419,6 +415,61 @@
     }
     .zd-sig-check { color:var(--safe); flex-shrink:0; font-size:0.78rem; margin-top:1px; }
 
+    /* ── STANDBY OVERLAY ── */
+    .standby-overlay {
+        position:absolute; inset:0; z-index:20;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        background: radial-gradient(ellipse at center, rgba(8,16,30,0.97) 0%, rgba(4,8,14,0.99) 100%);
+        gap:0.9rem; pointer-events:none;
+    }
+    .so-ring {
+        width:64px; height:64px; border-radius:50%;
+        border:2px solid rgba(0,183,255,0.14);
+        display:flex; align-items:center; justify-content:center;
+        position:relative;
+        box-shadow:0 0 28px rgba(0,183,255,0.06), inset 0 0 16px rgba(0,183,255,0.04);
+    }
+    .so-ring::before {
+        content:''; position:absolute; inset:-8px; border-radius:50%;
+        border:1px solid rgba(0,183,255,0.07);
+        animation:soSpin 8s linear infinite;
+    }
+    .so-ring::after {
+        content:''; position:absolute; inset:-16px; border-radius:50%;
+        border:1px dashed rgba(0,183,255,0.04);
+        animation:soSpin 14s linear infinite reverse;
+    }
+    @keyframes soSpin { to{transform:rotate(360deg)} }
+    .so-dot {
+        width:10px; height:10px; border-radius:50%;
+        background:rgba(63,104,128,0.6);
+        box-shadow:0 0 12px rgba(0,183,255,0.2);
+        animation:syspulse 2.8s ease-in-out infinite;
+    }
+    .so-title {
+        font-family:'Orbitron',sans-serif; font-size:0.82rem; font-weight:700;
+        letter-spacing:0.22em; color:rgba(63,104,128,0.55);
+    }
+    .so-sub {
+        font-size:0.78rem; color:rgba(63,104,128,0.38); letter-spacing:0.04em;
+        text-align:center; max-width:320px; line-height:1.6;
+    }
+    .so-hint {
+        font-family:'Share Tech Mono',monospace; font-size:0.62rem;
+        color:rgba(63,104,128,0.25); margin-top:0.2rem;
+    }
+    .so-scan {
+        position:absolute; left:0; right:0; height:1px;
+        background:linear-gradient(90deg,transparent,rgba(0,183,255,0.1),transparent);
+        animation:soScan 4s ease-in-out infinite;
+    }
+    @keyframes soScan {
+        0%   { top:0%;    opacity:0; }
+        10%  { opacity:1; }
+        90%  { opacity:0.4; }
+        100% { top:100%; opacity:0; }
+    }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width:4px; }
     ::-webkit-scrollbar-track { background:transparent; }
@@ -460,21 +511,21 @@
 
     <div class="inc-badge" id="incBadge">
         <span class="ilbl">ACTIVE INCIDENTS</span>
-        <span class="inum" id="activeIncCount">00</span>
+        <span class="inum" id="activeIncCount">—</span>
     </div>
 
     <div class="zone-tiles">
         <div class="zt safe">
             <span class="zlbl">SAFE ZONES</span>
-            <span class="zcnt" id="safeCount">00</span>
+            <span class="zcnt" id="safeCount">—</span>
         </div>
         <div class="zt watch">
             <span class="zlbl">WATCH ZONES</span>
-            <span class="zcnt" id="watchCount">00</span>
+            <span class="zcnt" id="watchCount">—</span>
         </div>
         <div class="zt crit">
             <span class="zlbl">CRITICAL ZONES</span>
-            <span class="zcnt" id="critCount">00</span>
+            <span class="zcnt" id="critCount">—</span>
         </div>
     </div>
 
@@ -500,11 +551,20 @@
 
         <div class="map-panel">
             <div class="map-topbar">
-                <span class="map-topbar-title">▸ EVENT MAP — REAL-TIME ZONE INTELLIGENCE</span>
-                <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+                <span class="map-topbar-title">▸ EVENT MAP — ZONE INTELLIGENCE</span>
+                <div class="live-badge" id="liveBadge"><span class="live-dot"></span>LIVE</div>
                 <span class="map-topbar-time" id="mapClock">--:--:--</span>
             </div>
             <canvas id="eventMap"></canvas>
+
+            <!-- Standby overlay — visible when not connected -->
+            <div class="standby-overlay" id="standbyOverlay">
+                <div class="so-scan"></div>
+                <div class="so-ring"><div class="so-dot"></div></div>
+                <div class="so-title">SYSTEM STANDBY</div>
+                <div class="so-sub">Connect to a live session to activate the command center</div>
+                <div class="so-hint">▸ Enter backend URL and session code above</div>
+            </div>
 
             <!-- Zone Detail Slide-In -->
             <div class="zone-detail" id="zoneDetail">
@@ -544,7 +604,7 @@
                 <span class="sb-hdr-r" id="incTs">—</span>
             </div>
             <div id="incList">
-                <div class="inc-empty">● Monitoring all zones...</div>
+                <div class="inc-empty">No active session — connect to view incidents</div>
             </div>
         </div>
 
