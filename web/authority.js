@@ -681,3 +681,364 @@ window.addEventListener('load',()=>{
     let rdeb;
     window.addEventListener('resize',()=>{ clearTimeout(rdeb); rdeb=setTimeout(resizeCanvas,80); });
 });
+
+
+// ═══════════════════════════════════════════════════════════════
+//  CROUDIFY WALLET  — Organisation + Credits + Razorpay
+// ═══════════════════════════════════════════════════════════════
+
+// ── Wallet state ──────────────────────────────────────────────
+let _walletOrgId      = null;   // MongoDB _id of the demo org
+let _walletOrgName    = '';
+let _walletBalance    = null;
+let _walletPollTimer  = null;
+let _rchSelectedAmt   = null;   // currently chosen recharge amount (100/500/1000)
+let _rzpInstance      = null;   // Razorpay checkout object
+let _rzpKeyId         = '';     // populated from create-order response
+
+// ── Derive backend base from the existing authority URL input ──
+function _walletBackendBase() {
+    const raw = (document.getElementById('authUrl') || {}).value || '';
+    let url = raw.trim().replace(/\/+$/, '');
+    if (!url) return '';
+    if (!url.startsWith('http')) {
+        const local = url.startsWith('localhost') || url.startsWith('127.') || url.startsWith('10.');
+        url = (local ? 'http://' : 'https://') + url;
+    }
+    return url;
+}
+
+// ── Init on page load ─────────────────────────────────────────
+(function walletInit() {
+    // Poll on a 30s interval regardless of live session status
+    _walletOrgDot();
+    _startWalletPoll();
+})();
+
+function _startWalletPoll() {
+    if (_walletPollTimer) clearInterval(_walletPollTimer);
+    _loadWallet();
+    _walletPollTimer = setInterval(_loadWallet, 30_000);
+}
+
+// Trigger a wallet refresh any time the user connects a backend URL
+const _origSaveConnect = window.saveAndConnect;
+if (typeof authorityConnect === 'function') {
+    const _origAuth = window.authorityConnect;
+    window.authorityConnect = function() {
+        _origAuth && _origAuth.apply(this, arguments);
+        setTimeout(_loadWallet, 1200);   // give backend a moment to respond
+    };
+}
+
+// ── Fetch demo org + wallet ───────────────────────────────────
+async function _loadWallet() {
+    const base = _walletBackendBase();
+    if (!base) {
+        document.getElementById('walletOrgName').textContent = 'Set backend URL above';
+        document.getElementById('walletBalance').textContent = '—';
+        document.getElementById('walletTxnList').innerHTML   =
+            '<div class="wallet-loading">No backend connected</div>';
+        return;
+    }
+
+    try {
+        // 1. Fetch (or auto-create) the demo org
+        if (!_walletOrgId) {
+            const orgResp = await fetch(`${base}/wallet/demo-org`);
+            if (!orgResp.ok) throw new Error(`org HTTP ${orgResp.status}`);
+            const orgData = await orgResp.json();
+            _walletOrgId   = orgData.id;
+            _walletOrgName = orgData.name || 'Demo Organisation';
+            document.getElementById('walletOrgName').textContent = _walletOrgName;
+            _walletOrgDot(true);
+        }
+
+        // 2. Fetch wallet balance + transactions
+        const wResp = await fetch(`${base}/wallet/${_walletOrgId}`);
+        if (!wResp.ok) throw new Error(`wallet HTTP ${wResp.status}`);
+        const wData = await wResp.json();
+
+        const prevBalance = _walletBalance;
+        _walletBalance = wData.balance ?? 0;
+
+        // Update balance display (flash green if balance increased)
+        const balEl = document.getElementById('walletBalance');
+        balEl.textContent = _walletBalance.toLocaleString();
+        if (prevBalance !== null && _walletBalance > prevBalance) {
+            balEl.classList.remove('flash');
+            void balEl.offsetWidth;   // reflow to restart animation
+            balEl.classList.add('flash');
+            setTimeout(() => balEl.classList.remove('flash'), 750);
+        }
+
+        // Sync header compact wallet widget
+        const hdrBal = document.getElementById('hdrWalletBal');
+        if (hdrBal) {
+            hdrBal.textContent = _walletBalance.toLocaleString();
+            hdrBal.style.color = _walletBalance === 0
+                ? 'var(--critical)'
+                : _walletBalance <= 20
+                    ? 'var(--watch)'
+                    : 'var(--text-bright)';
+        }
+
+        // Timestamp
+        const updEl = document.getElementById('walletUpdated');
+        updEl.textContent = new Date().toLocaleTimeString('en-IN', { hour12: false });
+
+        // 3. Render recent transactions
+        _renderWalletTxns(wData.recent_transactions || []);
+
+        // 4. Update low-balance banner
+        _updateLowBalBanner(_walletBalance);
+
+    } catch (e) {
+        console.warn('[WALLET] load failed:', e);
+        document.getElementById('walletOrgName').textContent = 'Unavailable';
+        document.getElementById('walletTxnList').innerHTML =
+            '<div class="wallet-loading">Backend unreachable</div>';
+    }
+}
+
+// ── Low-balance banner ────────────────────────────────────────
+const LOW_BAL_THRESHOLD = 20;
+let _bannerDismissed = false;
+
+function _updateLowBalBanner(balance) {
+    const banner   = document.getElementById('lowBalBanner');
+    const icon     = document.getElementById('lowBalIcon');
+    const msg      = document.getElementById('lowBalMsg');
+    const countEl  = document.getElementById('lowBalCount');
+    if (!banner) return;
+
+    // Re-show banner whenever balance changes to low (reset dismiss on each poll)
+    if (balance === 0) {
+        _bannerDismissed = false;
+        banner.classList.remove('hidden');
+        banner.classList.add('critical');
+        banner.classList.remove('warning');
+        icon.textContent = '🚫';
+        msg.innerHTML = '<strong>Premium intelligence paused.</strong> Recharge to resume AI features.';
+    } else if (balance <= LOW_BAL_THRESHOLD) {
+        _bannerDismissed = false;
+        banner.classList.remove('hidden');
+        banner.classList.remove('critical');
+        icon.textContent = '⚠️';
+        countEl.textContent = balance;
+        msg.innerHTML = `Low Croudify Balance — <strong id="lowBalCount">${balance}</strong> credits remaining.`;
+    } else {
+        banner.classList.add('hidden');
+        _bannerDismissed = false;
+    }
+}
+
+function _walletOrgDot(connected = false) {
+    const dot = document.getElementById('walletOrgDot');
+    if (!dot) return;
+    if (connected) {
+        dot.style.background   = 'var(--safe)';
+        dot.style.boxShadow    = '0 0 6px var(--safe)';
+    } else {
+        dot.style.background   = 'rgba(63,104,128,0.5)';
+        dot.style.boxShadow    = 'none';
+    }
+}
+
+function _renderWalletTxns(txns) {
+    const container = document.getElementById('walletTxnList');
+    if (!txns.length) {
+        container.innerHTML = '<div class="wallet-loading">No transactions yet</div>';
+        return;
+    }
+    container.innerHTML = txns.map(t => {
+        const isPos    = t.credits > 0;
+        const sign     = isPos ? '+' : '';
+        const credits  = `${sign}${t.credits}`;
+        const cssPos   = isPos ? 'pos' : 'neg';
+        const label    = t.type === 'RECHARGE'
+            ? `RECHARGE`
+            : `${t.feature || 'USAGE'}`;
+        const statusCss = t.status === 'SUCCESS' ? 'ok' : 'err';
+        const statusLbl = t.status === 'SUCCESS' ? '✓' : '✕';
+        return `<div class="wallet-txn">
+            <span class="wallet-txn-name">${label}</span>
+            <span class="wallet-txn-credits ${cssPos}">${credits}</span>
+            <span class="wallet-txn-status ${statusCss}">${statusLbl}</span>
+        </div>`;
+    }).join('');
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  RECHARGE MODAL
+// ─────────────────────────────────────────────────────────────
+
+function openRechargeModal() {
+    _rchSelectedAmt = null;
+    document.getElementById('rchProceedBtn').disabled = true;
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        document.getElementById(id).classList.remove('selected');
+    });
+    document.getElementById('rechargeModal').classList.remove('hidden');
+}
+
+function closeRechargeModal() {
+    document.getElementById('rechargeModal').classList.add('hidden');
+    _rchSelectedAmt = null;
+}
+
+function _rchBackdropClick(e) {
+    if (e.target === document.getElementById('rechargeModal')) closeRechargeModal();
+}
+
+function selectRchAmount(amount) {
+    _rchSelectedAmt = amount;
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        document.getElementById(id).classList.remove('selected');
+    });
+    document.getElementById(`rchBtn${amount}`).classList.add('selected');
+    document.getElementById('rchProceedBtn').disabled = false;
+}
+
+// ── Razorpay checkout ─────────────────────────────────────────
+async function initiateRazorpay() {
+    if (!_rchSelectedAmt) return;
+    if (!_walletOrgId) {
+        _walletToast('Organisation not loaded — set backend URL first', true);
+        return;
+    }
+
+    const base = _walletBackendBase();
+    if (!base) { _walletToast('No backend URL configured', true); return; }
+
+    const proceedBtn = document.getElementById('rchProceedBtn');
+    proceedBtn.disabled  = true;
+    proceedBtn.textContent = 'Creating order…';
+
+    try {
+        // 1. Create Razorpay order on backend
+        const orderResp = await fetch(`${base}/wallet/create-order`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                organization_id: _walletOrgId,
+                amount_inr:      _rchSelectedAmt,
+            }),
+        });
+
+        if (!orderResp.ok) {
+            const err = await orderResp.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP ${orderResp.status}`);
+        }
+
+        const order = await orderResp.json();
+        _rzpKeyId = order.key_id;
+
+        // 2. Load Razorpay checkout.js if not already loaded
+        await _loadRazorpayScript();
+
+        // 3. Open Razorpay checkout
+        closeRechargeModal();
+
+        const options = {
+            key:         _rzpKeyId,
+            amount:      order.amount,              // paise
+            currency:    'INR',
+            name:        'Croudify',
+            description: `${order.credits_to_add} Croudify Credits`,
+            order_id:    order.order_id,
+            theme:       { color: '#00b7ff' },
+            prefill:     { name: _walletOrgName },
+            handler: async function(response) {
+                // 4. Verify payment on backend
+                await _verifyRazorpayPayment({
+                    order_id:   order.order_id,
+                    payment_id: response.razorpay_payment_id,
+                    signature:  response.razorpay_signature,
+                    amount_inr: _rchSelectedAmt,
+                });
+            },
+            modal: {
+                ondismiss: function() {
+                    _walletToast('Payment cancelled', true);
+                }
+            }
+        };
+
+        _rzpInstance = new window.Razorpay(options);
+        _rzpInstance.open();
+
+    } catch (e) {
+        console.error('[WALLET] initiateRazorpay error:', e);
+        _walletToast('Payment setup failed: ' + e.message, true);
+    } finally {
+        proceedBtn.disabled  = false;
+        proceedBtn.textContent = 'PROCEED TO PAYMENT';
+    }
+}
+
+async function _verifyRazorpayPayment({ order_id, payment_id, signature, amount_inr }) {
+    const base = _walletBackendBase();
+    try {
+        const resp = await fetch(`${base}/wallet/verify-payment`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                organization_id: _walletOrgId,
+                order_id,
+                payment_id,
+                signature,
+                amount_inr,
+            }),
+        });
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP ${resp.status}`);
+        }
+
+        const result = await resp.json();
+        if (result.status === 'SUCCESS') {
+            _walletBalance = result.new_balance;
+            const balEl = document.getElementById('walletBalance');
+            balEl.textContent = _walletBalance.toLocaleString();
+            balEl.classList.remove('flash');
+            void balEl.offsetWidth;
+            balEl.classList.add('flash');
+            setTimeout(() => balEl.classList.remove('flash'), 750);
+            _walletToast(`✓ +${result.credits_added} Credits added! Balance: ${result.new_balance}`);
+            // Refresh full wallet data (transactions etc.)
+            setTimeout(_loadWallet, 800);
+        }
+
+    } catch (e) {
+        console.error('[WALLET] verify failed:', e);
+        _walletToast('Payment verification failed: ' + e.message, true);
+    }
+}
+
+function _loadRazorpayScript() {
+    return new Promise((resolve, reject) => {
+        if (window.Razorpay) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload  = resolve;
+        script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+        document.head.appendChild(script);
+    });
+}
+
+// ── Wallet toast notification ─────────────────────────────────
+let _walletToastTimer = null;
+function _walletToast(msg, isError = false) {
+    const el = document.getElementById('walletToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'wallet-toast' + (isError ? ' err' : '');
+    clearTimeout(_walletToastTimer);
+    _walletToastTimer = setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => { el.classList.add('hidden'); el.style.opacity = ''; }, 420);
+    }, 3800);
+}

@@ -487,7 +487,224 @@
         #incList { max-height:38vh; }
         .cmd-hdr { gap:0.9rem; padding:0 0.9rem; }
     }
-    .hidden { display:none !important; }
+
+    /* ── WALLET PANEL ─────────────────────────────────────── */
+    .wallet-panel {
+        padding: 0.78rem 1rem;
+        display: flex; flex-direction: column; gap: 0.62rem;
+        background: linear-gradient(135deg, rgba(0,183,255,0.04) 0%, rgba(0,183,255,0.02) 100%);
+    }
+    .wallet-org-row {
+        display: flex; align-items: center; gap: 0.45rem;
+        font-size: 0.68rem; color: var(--text-dim); font-weight: 600; letter-spacing: 0.08em;
+    }
+    .wallet-org-dot {
+        width: 6px; height: 6px; border-radius: 50%; background: var(--safe);
+        box-shadow: 0 0 6px var(--safe); flex-shrink: 0;
+    }
+    .wallet-balance-block {
+        display: flex; align-items: baseline; gap: 0.42rem;
+    }
+    .wallet-credits-num {
+        font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900;
+        color: var(--accent); line-height: 1;
+        text-shadow: 0 0 24px rgba(0,183,255,0.38);
+        transition: all 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .wallet-credits-num.flash {
+        animation: wflash 0.7s ease-in-out;
+    }
+    @keyframes wflash {
+        0%   { color: var(--safe); text-shadow: 0 0 32px rgba(0,230,118,0.8); }
+        100% { color: var(--accent); text-shadow: 0 0 24px rgba(0,183,255,0.38); }
+    }
+    .wallet-credits-unit {
+        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em;
+        color: var(--accent); opacity: 0.7;
+    }
+    .wallet-recharge-btn {
+        width: 100%; padding: 0.62rem;
+        background: linear-gradient(135deg, rgba(0,183,255,0.15), rgba(0,183,255,0.07));
+        border: 1px solid rgba(0,183,255,0.4);
+        color: var(--accent); border-radius: 4px;
+        font-family: 'Rajdhani', sans-serif; font-weight: 700;
+        font-size: 0.78rem; letter-spacing: 0.15em;
+        cursor: pointer; transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+        box-shadow: 0 0 16px rgba(0,183,255,0.08);
+    }
+    .wallet-recharge-btn:hover {
+        background: linear-gradient(135deg, rgba(0,183,255,0.25), rgba(0,183,255,0.12));
+        box-shadow: 0 0 28px rgba(0,183,255,0.22); transform: translateY(-1px);
+    }
+    .wallet-recharge-btn:disabled {
+        opacity: 0.45; cursor: not-allowed; transform: none;
+    }
+    .wallet-txn-list { display: flex; flex-direction: column; gap: 0; }
+    .wallet-txn-label {
+        font-size: 0.52rem; font-weight: 700; letter-spacing: 0.2em;
+        color: var(--text-dim); margin-bottom: 0.32rem;
+    }
+    .wallet-txn {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.34rem 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+        font-size: 0.75rem;
+    }
+    .wallet-txn:last-child { border-bottom: none; }
+    .wallet-txn-name { color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 0.67rem; }
+    .wallet-txn-credits {
+        font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700;
+    }
+    .wallet-txn-credits.pos { color: var(--safe); }
+    .wallet-txn-credits.neg { color: var(--text-dim); }
+    .wallet-txn-status {
+        font-size: 0.55rem; font-weight: 700; letter-spacing: 0.1em;
+        padding: 0.06rem 0.32rem; border-radius: 2px;
+    }
+    .wallet-txn-status.ok  { background: rgba(0,230,118,0.1); color: var(--safe); }
+    .wallet-txn-status.err { background: rgba(255,59,59,0.1);  color: var(--critical); }
+    .wallet-loading {
+        font-family: 'Share Tech Mono', monospace; font-size: 0.66rem;
+        color: var(--text-dim); text-align: center; padding: 0.35rem 0;
+    }
+    /* ── RECHARGE MODAL ──────────────────────────────────── */
+    .rch-modal {
+        position: fixed; inset: 0; z-index: 2000;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(4,7,12,0.93); backdrop-filter: blur(10px);
+        animation: mfade 0.22s ease;
+    }
+    .rch-modal.hidden { display: none; }
+    .rch-box {
+        width: min(420px, 94vw);
+        background: #060d18;
+        border: 1px solid rgba(0,183,255,0.32); border-radius: 8px; overflow: hidden;
+        animation: mslide 0.32s cubic-bezier(0.34,1.3,0.64,1);
+        box-shadow: 0 0 60px rgba(0,183,255,0.15), 0 0 120px rgba(0,183,255,0.05);
+    }
+    .rch-hdr {
+        padding: 1rem 1.35rem;
+        background: rgba(0,183,255,0.06); border-bottom: 1px solid rgba(0,183,255,0.18);
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .rch-title {
+        font-family: 'Orbitron', sans-serif; font-size: 0.8rem; font-weight: 700;
+        letter-spacing: 0.12em; color: var(--accent);
+    }
+    .rch-close {
+        background: none; border: 1px solid var(--border-mid); color: var(--text-dim);
+        cursor: pointer; border-radius: 3px; width: 24px; height: 24px;
+        font-size: 0.78rem; display: flex; align-items: center; justify-content: center;
+        transition: all 0.15s;
+    }
+    .rch-close:hover { border-color: var(--critical); color: var(--critical); }
+    .rch-body { padding: 1.35rem; display: flex; flex-direction: column; gap: 1rem; }
+    .rch-sub {
+        font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.04em; line-height: 1.5;
+    }
+    .rch-sub strong { color: var(--accent); }
+    .rch-amounts { display: flex; flex-direction: column; gap: 0.52rem; }
+    .rch-amount-btn {
+        width: 100%; padding: 0.85rem 1.1rem;
+        background: rgba(255,255,255,0.03); border: 1px solid var(--border-mid);
+        color: var(--text); border-radius: 5px;
+        font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 0.92rem;
+        cursor: pointer; transition: all 0.18s;
+        display: flex; align-items: center; justify-content: space-between;
+        letter-spacing: 0.04em;
+    }
+    .rch-amount-btn:hover {
+        border-color: rgba(0,183,255,0.5); background: rgba(0,183,255,0.06);
+        color: var(--text-bright);
+    }
+    .rch-amount-btn.selected {
+        border-color: var(--accent); background: rgba(0,183,255,0.12);
+        color: var(--text-bright);
+        box-shadow: 0 0 16px rgba(0,183,255,0.15);
+    }
+    .rch-amount-label { display: flex; align-items: center; gap: 0.65rem; }
+    .rch-amount-inr {
+        font-family: 'Orbitron', sans-serif; font-size: 1.05rem; font-weight: 900; color: var(--accent);
+    }
+    .rch-amount-desc { font-size: 0.78rem; color: var(--text-dim); }
+    .rch-amount-credits {
+        font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; color: var(--safe);
+    }
+    .rch-divider {
+        height: 1px; background: var(--border); margin: 0.1rem 0;
+    }
+    .rch-proceed-btn {
+        width: 100%; padding: 0.9rem;
+        background: linear-gradient(135deg, rgba(0,183,255,0.2), rgba(0,183,255,0.1));
+        border: 2px solid var(--accent); color: var(--text-bright);
+        font-family: 'Orbitron', sans-serif; font-size: 0.78rem; font-weight: 700;
+        letter-spacing: 0.13em; border-radius: 5px; cursor: pointer;
+        transition: all 0.2s; box-shadow: 0 0 20px rgba(0,183,255,0.15);
+    }
+    .rch-proceed-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, rgba(0,183,255,0.3), rgba(0,183,255,0.15));
+        box-shadow: 0 0 36px rgba(0,183,255,0.3); transform: translateY(-1px);
+    }
+    .rch-proceed-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .rch-note {
+        font-size: 0.62rem; color: var(--text-dim); text-align: center; line-height: 1.5;
+    }
+    .rch-note a { color: var(--accent); text-decoration: none; }
+    /* Wallet toast notification */
+    .wallet-toast {
+        position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 3000;
+        padding: 0.72rem 1.1rem;
+        background: rgba(6,13,24,0.97); border: 1px solid rgba(0,230,118,0.4);
+        border-radius: 6px; backdrop-filter: blur(12px);
+        font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.82rem;
+        color: var(--safe); letter-spacing: 0.06em;
+        display: flex; align-items: center; gap: 0.5rem;
+        box-shadow: 0 0 24px rgba(0,230,118,0.15);
+        animation: wtoast-in 0.3s cubic-bezier(0.34,1.3,0.64,1);
+        transition: opacity 0.4s ease;
+    }
+    .wallet-toast.hidden { display: none; }
+    .wallet-toast.err { border-color: rgba(255,59,59,0.4); color: var(--critical); box-shadow: 0 0 24px rgba(255,59,59,0.1); }
+    @keyframes wtoast-in { from{transform:translateY(20px);opacity:0} to{transform:none;opacity:1} }
+
+    /* ── LOW BALANCE BANNER ── */
+    .low-bal-banner {
+        display: flex; align-items: center; gap: 0.6rem;
+        margin: 0.5rem 0.75rem;
+        padding: 0.55rem 0.85rem;
+        background: rgba(255,170,0,0.07);
+        border: 1px solid rgba(255,170,0,0.30);
+        border-radius: 7px;
+        font-size: 0.78rem; font-family: 'Rajdhani', sans-serif;
+        color: var(--watch);
+        animation: lowbal-in 0.35s ease;
+    }
+    .low-bal-banner.critical {
+        background: rgba(255,59,59,0.08);
+        border-color: rgba(255,59,59,0.35);
+        color: var(--critical);
+    }
+    .low-bal-banner.hidden { display: none; }
+    .low-bal-icon { font-size: 0.95rem; flex-shrink: 0; }
+    .low-bal-msg  { flex: 1; line-height: 1.3; }
+    .low-bal-btn  {
+        flex-shrink: 0;
+        padding: 0.28rem 0.72rem;
+        background: rgba(255,170,0,0.14); border: 1px solid rgba(255,170,0,0.4);
+        border-radius: 5px; color: var(--watch); font-size: 0.72rem; font-weight: 700;
+        letter-spacing: 0.07em; cursor: pointer; transition: background 0.18s;
+    }
+    .low-bal-banner.critical .low-bal-btn {
+        background: rgba(255,59,59,0.14); border-color: rgba(255,59,59,0.4); color: var(--critical);
+    }
+    .low-bal-btn:hover { background: rgba(255,170,0,0.25); }
+    .low-bal-dismiss {
+        flex-shrink: 0; background: none; border: none;
+        color: var(--text-dim); font-size: 0.7rem; cursor: pointer; padding: 0 0.15rem;
+        transition: color 0.15s;
+    }
+    .low-bal-dismiss:hover { color: var(--watch); }
+    @keyframes lowbal-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
     </style>
 </head>
 <body>
@@ -530,6 +747,18 @@
     </div>
 
     <a href="index.html" class="dev-link" title="Switch to developer dashboard">⌥ DEV VIEW</a>
+    <!-- Nav links + compact wallet widget -->
+    <div style="margin-left:auto;display:flex;align-items:center;gap:0.75rem;">
+        <a href="billing.html" style="padding:0.28rem 0.8rem;border-radius:5px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-decoration:none;color:var(--text-dim);border:1px solid transparent;transition:all 0.18s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='rgba(0,183,255,0.25)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='transparent'">BILLING</a>
+        <a href="index.html"   style="padding:0.28rem 0.8rem;border-radius:5px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-decoration:none;color:var(--text-dim);border:1px solid transparent;transition:all 0.18s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='rgba(0,183,255,0.25)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='transparent'">DEVELOPER</a>
+        <!-- Compact wallet widget -->
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.28rem 0.85rem;background:rgba(0,183,255,0.06);border:1px solid var(--border-mid);border-radius:7px;">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:var(--accent);flex-shrink:0;"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            <span id="hdrWalletBal" style="font-family:'Share Tech Mono',monospace;font-size:0.82rem;font-weight:700;color:var(--text-bright);">—</span>
+            <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:0.08em;">CR</span>
+            <button onclick="openRechargeModal()" style="padding:0.18rem 0.55rem;background:rgba(0,183,255,0.12);border:1px solid rgba(0,183,255,0.3);border-radius:4px;color:var(--accent);font-size:0.65rem;font-weight:700;letter-spacing:0.06em;cursor:pointer;">+ RECHARGE</button>
+        </div>
+    </div>
 </header>
 
 <!-- ══ MAIN LAYOUT ═══════════════════════════════════════════════════ -->
@@ -626,6 +855,42 @@
             </div>
         </div>
 
+        <!-- Low Balance Banner (shown by JS when balance is low) -->
+        <div class="low-bal-banner hidden" id="lowBalBanner">
+            <span class="low-bal-icon" id="lowBalIcon">⚠️</span>
+            <span class="low-bal-msg" id="lowBalMsg">Low Croudify Balance — <strong id="lowBalCount">0</strong> credits remaining.</span>
+            <button class="low-bal-btn" onclick="openRechargeModal()">Recharge</button>
+            <button class="low-bal-dismiss" onclick="document.getElementById('lowBalBanner').classList.add('hidden')" title="Dismiss">✕</button>
+        </div>
+
+        <!-- Croudify Wallet -->
+        <div class="sb-sec" id="walletSection">
+            <div class="sb-hdr">
+                <span class="sb-hdr-t">⚡ CROUDIFY WALLET</span>
+                <span class="sb-hdr-r" id="walletUpdated">—</span>
+            </div>
+            <div class="wallet-panel">
+                <div class="wallet-org-row">
+                    <div class="wallet-org-dot" id="walletOrgDot"></div>
+                    <span id="walletOrgName">Loading…</span>
+                </div>
+                <div class="wallet-balance-block">
+                    <span class="wallet-credits-num" id="walletBalance">—</span>
+                    <span class="wallet-credits-unit">CREDITS</span>
+                </div>
+                <button class="wallet-recharge-btn" id="walletRechargeBtn" onclick="openRechargeModal()" title="Top up your Croudify Credits balance">
+                    <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    RECHARGE WALLET
+                </button>
+                <div class="wallet-txn-list">
+                    <div class="wallet-txn-label">RECENT ACTIVITY</div>
+                    <div id="walletTxnList">
+                        <div class="wallet-loading">Connect to load…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Incident Replay -->
         <div class="sb-sec grow">
             <div class="sb-hdr">
@@ -688,6 +953,57 @@
 </div>
 
 <audio id="alertAudio" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+<!-- ══ RECHARGE MODAL ═══════════════════════════════════════ -->
+<div class="rch-modal hidden" id="rechargeModal" onclick="_rchBackdropClick(event)">
+    <div class="rch-box">
+        <div class="rch-hdr">
+            <span class="rch-title">⚡ RECHARGE WALLET</span>
+            <button class="rch-close" id="rchCloseBtn" onclick="closeRechargeModal()" title="Close">✕</button>
+        </div>
+        <div class="rch-body">
+            <p class="rch-sub">
+                Select an amount to top up your Croudify Credits balance.
+                <br><strong>1 INR = 1 Croudify Credit</strong>
+            </p>
+            <div class="rch-amounts">
+                <button class="rch-amount-btn" id="rchBtn100" onclick="selectRchAmount(100)" data-amount="100">
+                    <span class="rch-amount-label">
+                        <span class="rch-amount-inr">₹100</span>
+                        <span class="rch-amount-desc">Starter Pack</span>
+                    </span>
+                    <span class="rch-amount-credits">100 Credits</span>
+                </button>
+                <button class="rch-amount-btn" id="rchBtn500" onclick="selectRchAmount(500)" data-amount="500">
+                    <span class="rch-amount-label">
+                        <span class="rch-amount-inr">₹500</span>
+                        <span class="rch-amount-desc">Standard Pack</span>
+                    </span>
+                    <span class="rch-amount-credits">500 Credits</span>
+                </button>
+                <button class="rch-amount-btn" id="rchBtn1000" onclick="selectRchAmount(1000)" data-amount="1000">
+                    <span class="rch-amount-label">
+                        <span class="rch-amount-inr">₹1000</span>
+                        <span class="rch-amount-desc">Premium Pack</span>
+                    </span>
+                    <span class="rch-amount-credits">1000 Credits</span>
+                </button>
+            </div>
+            <div class="rch-divider"></div>
+            <button class="rch-proceed-btn" id="rchProceedBtn" onclick="initiateRazorpay()" disabled>
+                PROCEED TO PAYMENT
+            </button>
+            <p class="rch-note">
+                Powered by Razorpay · Payments are secure &amp; encrypted<br>
+                Test mode: use card <a href="#">4111 1111 1111 1111</a>, any CVV &amp; expiry
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Wallet toast -->
+<div class="wallet-toast hidden" id="walletToast"></div>
+
 <script src="authority.js"></script>
 </body>
 </html>

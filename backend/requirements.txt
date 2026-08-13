@@ -9,5 +9,8 @@ opencv-python-headless==4.8.1.78
 lap>=0.5.13
 ultralytics==8.0.227
 httpx==0.28.1
-websockets==16.0
+websockets>=10.4
 python-multipart==0.0.21
+razorpay==1.4.2
+python-dotenv>=1.0.0
+x402-avm[fastapi,avm]

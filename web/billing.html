@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Croudify — Billing & Usage</title>
+    <meta name="description" content="Croudify Billing — track credit usage, transaction history, and manage your Croudify Wallet.">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --bg:           #060a0f;
+        --surface:      #08101e;
+        --surface-2:    #0c1827;
+        --border:       rgba(0,183,255,0.10);
+        --border-mid:   rgba(0,183,255,0.22);
+        --text:         #b8d4ea;
+        --text-dim:     #3f6880;
+        --text-bright:  #e8f4ff;
+        --critical:     #ff3b3b;
+        --watch:        #ffaa00;
+        --safe:         #00e676;
+        --safe-bg:      rgba(0,230,118,0.06);
+        --safe-border:  rgba(0,230,118,0.28);
+        --accent:       #00b7ff;
+        --accent-bg:    rgba(0,183,255,0.07);
+        --x402-color:   #a78bfa;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; }
+    body {
+        background-color: var(--bg);
+        background-image:
+            linear-gradient(rgba(0,183,255,0.022) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,183,255,0.022) 1px, transparent 1px);
+        background-size: 50px 50px;
+        color: var(--text);
+        font-family: 'Rajdhani', sans-serif;
+        min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+        height: 64px;
+        background: rgba(6,10,15,0.97);
+        border-bottom: 1px solid var(--border-mid);
+        backdrop-filter: blur(20px);
+        padding: 0 2rem;
+        display: flex; align-items: center; gap: 1.5rem;
+        position: sticky; top: 0; z-index: 100;
+    }
+    .brand { display:flex; align-items:center; gap:0.6rem; text-decoration:none; }
+    .brand-icon {
+        width:34px; height:34px;
+        border:1.5px solid var(--accent); border-radius:7px;
+        display:flex; align-items:center; justify-content:center;
+        background: rgba(0,183,255,0.07);
+    }
+    .brand-icon svg { width:18px; height:18px; fill:var(--accent); }
+    .brand-name { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:900; color:var(--text-bright); letter-spacing:0.1em; }
+    .brand-sub  { font-size:0.5rem; font-weight:700; letter-spacing:0.28em; color:var(--accent); }
+    .nav-links { display:flex; gap:0.25rem; margin-left:auto; }
+    .nav-link {
+        padding:0.3rem 0.9rem; border-radius:6px;
+        font-size:0.75rem; font-weight:600; letter-spacing:0.1em; text-decoration:none;
+        color:var(--text-dim); transition:all 0.18s;
+    }
+    .nav-link:hover { color:var(--text-bright); background:rgba(0,183,255,0.06); }
+    .nav-link.active { color:var(--accent); background:rgba(0,183,255,0.10); }
+    .hdr-backend { display:flex; align-items:center; gap:0.5rem; margin-left:0.5rem; }
+    .hdr-backend input {
+        width:220px; padding:0.28rem 0.65rem;
+        background:rgba(0,183,255,0.04); border:1px solid var(--border);
+        border-radius:5px; color:var(--text); font-size:0.72rem; font-family:'Share Tech Mono',monospace;
+        outline:none; transition:border 0.18s;
+    }
+    .hdr-backend input:focus { border-color:rgba(0,183,255,0.35); }
+    .hdr-btn {
+        padding:0.28rem 0.75rem; background:rgba(0,183,255,0.10);
+        border:1px solid rgba(0,183,255,0.28); border-radius:5px;
+        color:var(--accent); font-size:0.72rem; font-weight:700; letter-spacing:0.08em;
+        cursor:pointer; transition:background 0.18s;
+    }
+    .hdr-btn:hover { background:rgba(0,183,255,0.20); }
+
+    /* ── PAGE LAYOUT ── */
+    .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .page-title {
+        font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:900;
+        color:var(--text-bright); letter-spacing:0.12em; margin-bottom:2rem;
+        display:flex; align-items:center; gap:0.8rem;
+    }
+    .page-title::before {
+        content:''; width:3px; height:1.2em;
+        background:var(--accent); border-radius:2px;
+        box-shadow:0 0 10px var(--accent);
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }
+    .sum-card {
+        background:var(--surface);
+        border:1px solid var(--border-mid);
+        border-radius:12px; padding:1.25rem 1.5rem;
+    }
+    .sum-card-label { font-size:0.65rem; font-weight:700; letter-spacing:0.18em; color:var(--text-dim); margin-bottom:0.5rem; }
+    .sum-card-value { font-family:'Share Tech Mono',monospace; font-size:2rem; font-weight:700; color:var(--text-bright); line-height:1; }
+    .sum-card-unit  { font-size:0.75rem; color:var(--text-dim); margin-top:0.3rem; }
+    .sum-card.low .sum-card-value { color:var(--watch); }
+    .sum-card.critical .sum-card-value { color:var(--critical); }
+    .sum-card.x402 .sum-card-value { color:var(--x402-color); }
+
+    /* ── SECTION ── */
+    .section {
+        background:var(--surface);
+        border:1px solid var(--border-mid);
+        border-radius:12px; margin-bottom:1.5rem; overflow:hidden;
+    }
+    .section-hdr {
+        display:flex; align-items:center; justify-content:space-between;
+        padding:0.7rem 1.25rem;
+        background:rgba(0,183,255,0.03);
+        border-bottom:1px solid var(--border);
+    }
+    .section-title { font-size:0.65rem; font-weight:700; letter-spacing:0.18em; color:var(--accent); }
+    .section-ts    { font-size:0.62rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace; }
+
+    /* ── FEATURE BREAKDOWN ── */
+    .feat-table { padding:1rem 1.25rem; }
+    .feat-row {
+        display:flex; align-items:center; gap:1rem;
+        padding:0.5rem 0; border-bottom:1px solid rgba(0,183,255,0.05);
+    }
+    .feat-row:last-child { border-bottom:none; }
+    .feat-name  { flex:1; font-size:0.82rem; color:var(--text); letter-spacing:0.04em; }
+    .feat-bar   { flex:2; height:5px; background:rgba(0,183,255,0.08); border-radius:3px; overflow:hidden; }
+    .feat-fill  { height:100%; background:linear-gradient(90deg,#00b7ff,#0077cc); border-radius:3px; transition:width 0.6s cubic-bezier(0.4,0,0.2,1); }
+    .feat-count { min-width:42px; text-align:right; font-family:'Share Tech Mono',monospace; font-size:0.8rem; color:var(--accent); }
+
+    /* ── TRANSACTION HISTORY ── */
+    .txn-list { padding:0.5rem 0; max-height:420px; overflow-y:auto; }
+    .txn-list::-webkit-scrollbar { width:3px; }
+    .txn-list::-webkit-scrollbar-track { background:transparent; }
+    .txn-list::-webkit-scrollbar-thumb { background:rgba(0,183,255,0.2); border-radius:2px; }
+    .txn-row {
+        display:flex; align-items:center; gap:0.75rem;
+        padding:0.55rem 1.25rem;
+        transition:background 0.15s;
+    }
+    .txn-row:hover { background:rgba(0,183,255,0.03); }
+    .txn-credits { min-width:52px; text-align:right; font-family:'Share Tech Mono',monospace; font-size:0.82rem; font-weight:700; }
+    .txn-credits.pos { color:var(--safe); }
+    .txn-credits.neg { color:var(--critical); }
+    .txn-credits.x402 { color:var(--x402-color); }
+    .txn-label  { flex:1; font-size:0.82rem; color:var(--text); }
+    .txn-time   { font-family:'Share Tech Mono',monospace; font-size:0.7rem; color:var(--text-dim); }
+    .txn-status { font-size:0.7rem; }
+    .txn-status.ok  { color:var(--safe); }
+    .txn-status.err { color:var(--critical); }
+    .txn-empty  { padding:1.5rem; text-align:center; color:var(--text-dim); font-size:0.8rem; }
+
+    /* ── RECHARGE BUTTON ── */
+    .recharge-row { padding:1.25rem; border-top:1px solid var(--border); text-align:center; }
+    .recharge-btn {
+        padding:0.7rem 2rem; background:linear-gradient(135deg,#0094d0,#005fa3);
+        border:1px solid rgba(0,183,255,0.4); border-radius:8px;
+        color:#fff; font-size:0.82rem; font-weight:700; letter-spacing:0.12em;
+        cursor:pointer; transition:all 0.2s;
+        box-shadow:0 0 20px rgba(0,183,255,0.2);
+    }
+    .recharge-btn:hover { background:linear-gradient(135deg,#00b0f0,#0077c8); box-shadow:0 0 28px rgba(0,183,255,0.35); transform:translateY(-1px); }
+
+    /* ── LOW-BALANCE BANNER ── */
+    .low-bal-banner {
+        display:flex; align-items:center; gap:0.6rem;
+        margin-bottom:1.5rem; padding:0.65rem 1rem;
+        background:rgba(255,170,0,0.07); border:1px solid rgba(255,170,0,0.30);
+        border-radius:8px; color:var(--watch); font-size:0.82rem;
+    }
+    .low-bal-banner.critical { background:rgba(255,59,59,0.08); border-color:rgba(255,59,59,0.35); color:var(--critical); }
+    .low-bal-banner.hidden   { display:none; }
+    .low-bal-msg { flex:1; }
+    .low-bal-btn {
+        padding:0.28rem 0.9rem; background:rgba(255,170,0,0.14);
+        border:1px solid rgba(255,170,0,0.4); border-radius:5px;
+        color:var(--watch); font-size:0.72rem; font-weight:700; letter-spacing:0.07em; cursor:pointer;
+    }
+
+    /* ── LOADING ── */
+    .loading { padding:2rem; text-align:center; color:var(--text-dim); font-size:0.8rem; animation:pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── RAZORPAY MODAL ── */
+    .modal-overlay {
+        position:fixed; inset:0; background:rgba(6,10,15,0.88);
+        backdrop-filter:blur(8px); display:flex; align-items:center;
+        justify-content:center; z-index:2000;
+    }
+    .modal-overlay.hidden { display:none; }
+    .modal-box {
+        background:var(--surface-2); border:1px solid var(--border-mid);
+        border-radius:16px; padding:2rem; width:340px;
+        box-shadow:0 0 60px rgba(0,183,255,0.12);
+    }
+    .modal-title { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:900; color:var(--text-bright); letter-spacing:0.1em; margin-bottom:1.5rem; }
+    .amount-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; margin-bottom:1.5rem; }
+    .amt-btn {
+        padding:0.75rem; background:rgba(0,183,255,0.05);
+        border:1px solid var(--border-mid); border-radius:8px;
+        color:var(--text); font-size:0.85rem; font-weight:600;
+        cursor:pointer; transition:all 0.18s; text-align:center;
+    }
+    .amt-btn:hover { background:rgba(0,183,255,0.12); border-color:rgba(0,183,255,0.35); }
+    .amt-btn.selected { background:rgba(0,183,255,0.18); border-color:var(--accent); color:var(--accent); box-shadow:0 0 12px rgba(0,183,255,0.2); }
+    .modal-actions { display:flex; gap:0.75rem; }
+    .modal-cancel-btn {
+        flex:1; padding:0.65rem; background:transparent;
+        border:1px solid rgba(63,104,128,0.3); border-radius:8px;
+        color:var(--text-dim); font-size:0.78rem; font-weight:600; letter-spacing:0.07em; cursor:pointer;
+    }
+    .modal-proceed-btn {
+        flex:2; padding:0.65rem;
+        background:linear-gradient(135deg,#0094d0,#005fa3);
+        border:1px solid rgba(0,183,255,0.4); border-radius:8px;
+        color:#fff; font-size:0.78rem; font-weight:700; letter-spacing:0.07em; cursor:pointer;
+        transition:all 0.2s;
+    }
+    .modal-proceed-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .modal-proceed-btn:not(:disabled):hover { background:linear-gradient(135deg,#00b0f0,#0077c8); }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="hdr">
+    <a href="authority.html" class="brand">
+        <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <div>
+            <div class="brand-sub">CROUDIFY</div>
+            <div class="brand-name">BILLING</div>
+        </div>
+    </a>
+
+    <nav class="nav-links">
+        <a href="authority.html" class="nav-link">Dashboard</a>
+        <a href="billing.html"   class="nav-link active">Billing</a>
+        <a href="index.html"     class="nav-link">Developer</a>
+    </nav>
+
+    <div class="hdr-backend">
+        <input type="text" id="backendUrl" placeholder="http://localhost:8000" spellcheck="false">
+        <button class="hdr-btn" onclick="loadBilling()">LOAD</button>
+    </div>
+</header>
+
+<!-- ── RECHARGE MODAL ── -->
+<div class="modal-overlay hidden" id="rechargeModal" onclick="_rchBackdrop(event)">
+    <div class="modal-box">
+        <div class="modal-title">RECHARGE WALLET</div>
+        <div class="amount-grid">
+            <div class="amt-btn" id="rchBtn100"  onclick="selectAmt(100)">₹100<br><small style="font-size:0.65rem;color:var(--text-dim)">100 Credits</small></div>
+            <div class="amt-btn" id="rchBtn500"  onclick="selectAmt(500)">₹500<br><small style="font-size:0.65rem;color:var(--text-dim)">500 Credits</small></div>
+            <div class="amt-btn" id="rchBtn1000" onclick="selectAmt(1000)">₹1000<br><small style="font-size:0.65rem;color:var(--text-dim)">1000 Credits</small></div>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-cancel-btn"  onclick="closeRecharge()">CANCEL</button>
+            <button class="modal-proceed-btn" id="rchProceedBtn" disabled onclick="initiateRazorpay()">PROCEED TO PAYMENT</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── PAGE ── -->
+<main class="page">
+    <div class="page-title">CROUDIFY USAGE</div>
+
+    <!-- Low-balance banner -->
+    <div class="low-bal-banner hidden" id="lowBalBanner">
+        <span>⚠️</span>
+        <span class="low-bal-msg" id="lowBalMsg">Low balance</span>
+        <button class="low-bal-btn" onclick="openRecharge()">Recharge</button>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="summary-row" id="summaryRow">
+        <div class="loading">Loading billing data…</div>
+    </div>
+
+    <!-- Feature breakdown -->
+    <div class="section" id="featSection" style="display:none">
+        <div class="section-hdr">
+            <span class="section-title">▸ TODAY'S FEATURE USAGE</span>
+            <span class="section-ts" id="featDate">—</span>
+        </div>
+        <div class="feat-table" id="featTable"></div>
+    </div>
+
+    <!-- Transaction history -->
+    <div class="section" id="txnSection" style="display:none">
+        <div class="section-hdr">
+            <span class="section-title">▸ TRANSACTION HISTORY</span>
+            <span class="section-ts" id="txnCount">—</span>
+        </div>
+        <div class="txn-list" id="txnList"></div>
+        <div class="recharge-row">
+            <button class="recharge-btn" onclick="openRecharge()">+ RECHARGE WALLET</button>
+        </div>
+    </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let _orgId = null;
+let _orgName = '';
+let _selectedAmt = null;
+let _rzpKeyId = null;
+
+function _base() {
+    return (localStorage.getItem('croudify_backend') || '').replace(/\/$/, '');
+}
+
+// ── Persist backend URL ────────────────────────────────────────
+const _urlInput = document.getElementById('backendUrl');
+_urlInput.value = _base() || 'http://localhost:8000';
+_urlInput.addEventListener('change', () => {
+    localStorage.setItem('croudify_backend', _urlInput.value.trim());
+});
+
+// ── Load billing data ──────────────────────────────────────────
+async function loadBilling() {
+    const base = _urlInput.value.trim().replace(/\/$/, '');
+    localStorage.setItem('croudify_backend', base);
+
+    document.getElementById('summaryRow').innerHTML = '<div class="loading">Loading…</div>';
+    document.getElementById('featSection').style.display = 'none';
+    document.getElementById('txnSection').style.display  = 'none';
+
+    try {
+        // Get demo org
+        if (!_orgId) {
+            const orgResp = await fetch(`${base}/wallet/demo-org`);
+            if (!orgResp.ok) throw new Error(`Org HTTP ${orgResp.status}`);
+            const orgData = await orgResp.json();
+            _orgId   = orgData.id;
+            _orgName = orgData.name || 'Demo Organisation';
+        }
+
+        // Get billing summary
+        const bResp = await fetch(`${base}/wallet/${_orgId}/billing-summary`);
+        if (!bResp.ok) throw new Error(`Billing HTTP ${bResp.status}`);
+        const data = await bResp.json();
+
+        _renderSummary(data);
+        _renderFeatureBreakdown(data.feature_breakdown || {}, data.today_credit_usage || 0);
+        _renderTransactions(data.recent_transactions || []);
+        _updateLowBal(data);
+
+    } catch (e) {
+        document.getElementById('summaryRow').innerHTML =
+            `<div class="loading">Error: ${e.message}</div>`;
+        console.error('[BILLING]', e);
+    }
+}
+
+// ── Render summary cards ───────────────────────────────────────
+function _renderSummary(data) {
+    const balance    = data.balance ?? 0;
+    const todayUsage = data.today_credit_usage ?? 0;
+    const x402calls  = data.today_x402_calls ?? 0;
+    const threshold  = data.low_balance_threshold ?? 20;
+
+    const balClass = balance === 0 ? 'critical' : balance <= threshold ? 'low' : '';
+
+    document.getElementById('summaryRow').innerHTML = `
+        <div class="sum-card ${balClass}">
+            <div class="sum-card-label">CURRENT BALANCE</div>
+            <div class="sum-card-value">${balance.toLocaleString()}</div>
+            <div class="sum-card-unit">Croudify Credits</div>
+        </div>
+        <div class="sum-card">
+            <div class="sum-card-label">TODAY'S USAGE</div>
+            <div class="sum-card-value">${todayUsage.toLocaleString()}</div>
+            <div class="sum-card-unit">Credits consumed today</div>
+        </div>
+        <div class="sum-card x402">
+            <div class="sum-card-label">x402 API CALLS</div>
+            <div class="sum-card-value">${x402calls}</div>
+            <div class="sum-card-unit">Algorand TestNet today</div>
+        </div>
+    `;
+}
+
+// ── Render feature breakdown ───────────────────────────────────
+function _renderFeatureBreakdown(breakdown, total) {
+    const section = document.getElementById('featSection');
+    const table   = document.getElementById('featTable');
+    const dateEl  = document.getElementById('featDate');
+
+    if (!total) {
+        section.style.display = 'none';
+        return;
+    }
+
+    const today = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+    dateEl.textContent = today;
+
+    // Feature display names
+    const names = {
+        PERSON_DETECTION: 'Person Detection', DENSITY: 'Density Analysis',
+        MOVEMENT: 'Movement Analysis', SPEED: 'Speed Analysis',
+        DIRECTION: 'Direction Analysis', FLOW: 'Flow Analysis',
+        COMPRESSION: 'Compression', EXIT_BLOCKAGE: 'Exit Blockage',
+        BEHAVIOUR: 'Behaviour Analysis', RISK_PREDICTION: 'Risk Prediction',
+        INTELLIGENCE_BUNDLE: 'Intelligence Bundle (combined)',
+        UNKNOWN: 'Unknown',
+    };
+
+    const maxVal = Math.max(...Object.values(breakdown), 1);
+    table.innerHTML = Object.entries(breakdown)
+        .sort(([,a],[,b]) => b - a)
+        .map(([feat, count]) => {
+            const pct = Math.round((count / maxVal) * 100);
+            const label = names[feat] || feat;
+            return `<div class="feat-row">
+                <span class="feat-name">${label}</span>
+                <div class="feat-bar"><div class="feat-fill" style="width:${pct}%"></div></div>
+                <span class="feat-count">${count}</span>
+            </div>`;
+        }).join('');
+
+    section.style.display = 'block';
+}
+
+// ── Render transaction history ─────────────────────────────────
+function _renderTransactions(txns) {
+    const section = document.getElementById('txnSection');
+    const list    = document.getElementById('txnList');
+    const countEl = document.getElementById('txnCount');
+
+    section.style.display = 'block';
+    countEl.textContent = `${txns.length} recent`;
+
+    if (!txns.length) {
+        list.innerHTML = '<div class="txn-empty">No transactions yet</div>';
+        return;
+    }
+
+    list.innerHTML = txns.map(t => {
+        const isX402  = t.type === 'X402_API';
+        const isPos   = t.credits > 0 || t.type === 'RECHARGE';
+        let credStr, credClass;
+        if (isX402) {
+            credStr  = `$${(t.amount_usd || 0.001).toFixed(3)}`;
+            credClass = 'x402';
+        } else {
+            const sign = t.credits >= 0 ? '+' : '';
+            credStr  = `${sign}${t.credits}`;
+            credClass = t.credits >= 0 ? 'pos' : 'neg';
+        }
+        const statusCss = t.status === 'SUCCESS' ? 'ok' : 'err';
+        const statusLbl = t.status === 'SUCCESS' ? '✓' : '✕';
+        return `<div class="txn-row">
+            <span class="txn-credits ${credClass}">${credStr}</span>
+            <span class="txn-label">${t.label}</span>
+            <span class="txn-time">${t.time}</span>
+            <span class="txn-status ${statusCss}">${statusLbl}</span>
+        </div>`;
+    }).join('');
+}
+
+// ── Low-balance banner ─────────────────────────────────────────
+function _updateLowBal(data) {
+    const banner = document.getElementById('lowBalBanner');
+    const msg    = document.getElementById('lowBalMsg');
+    const balance = data.balance ?? 0;
+    const threshold = data.low_balance_threshold ?? 20;
+
+    if (balance === 0) {
+        banner.classList.remove('hidden');
+        banner.classList.add('critical');
+        msg.innerHTML = '<strong>Premium intelligence paused.</strong> Recharge to resume AI features.';
+    } else if (balance <= threshold) {
+        banner.classList.remove('hidden', 'critical');
+        msg.innerHTML = `Low Croudify Balance — <strong>${balance}</strong> credits remaining.`;
+    } else {
+        banner.classList.add('hidden');
+    }
+}
+
+// ── Recharge modal ─────────────────────────────────────────────
+function openRecharge() {
+    _selectedAmt = null;
+    document.getElementById('rchProceedBtn').disabled = true;
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => document.getElementById(id).classList.remove('selected'));
+    document.getElementById('rechargeModal').classList.remove('hidden');
+}
+function closeRecharge() { document.getElementById('rechargeModal').classList.add('hidden'); }
+function _rchBackdrop(e) { if (e.target.id === 'rechargeModal') closeRecharge(); }
+function selectAmt(a) {
+    _selectedAmt = a;
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => document.getElementById(id).classList.remove('selected'));
+    document.getElementById(`rchBtn${a}`).classList.add('selected');
+    document.getElementById('rchProceedBtn').disabled = false;
+}
+
+async function initiateRazorpay() {
+    if (!_selectedAmt || !_orgId) return;
+    const base = _urlInput.value.trim().replace(/\/$/, '');
+    const btn  = document.getElementById('rchProceedBtn');
+    btn.disabled = true; btn.textContent = 'Creating order…';
+    try {
+        const orderResp = await fetch(`${base}/wallet/create-order`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ organization_id: _orgId, amount_inr: _selectedAmt }),
+        });
+        const order = await orderResp.json();
+        _rzpKeyId = order.key_id;
+        await _loadRzp();
+        closeRecharge();
+        const rzp = new window.Razorpay({
+            key: _rzpKeyId, amount: order.amount, currency: 'INR',
+            name: 'Croudify', description: `${order.credits_to_add} Credits`,
+            order_id: order.order_id, theme: {color:'#00b7ff'},
+            prefill: {name: _orgName},
+            handler: async function(resp) {
+                await fetch(`${base}/wallet/verify-payment`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ organization_id: _orgId, order_id: order.order_id,
+                        payment_id: resp.razorpay_payment_id, signature: resp.razorpay_signature,
+                        amount_inr: _selectedAmt }),
+                });
+                setTimeout(loadBilling, 1200);
+            },
+            modal: { ondismiss: () => {} }
+        });
+        rzp.open();
+    } catch(e) {
+        console.error(e);
+    } finally {
+        btn.disabled = false; btn.textContent = 'PROCEED TO PAYMENT';
+    }
+}
+
+function _loadRzp() {
+    return new Promise((res,rej) => {
+        if (window.Razorpay) { res(); return; }
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+    });
+}
+
+// ── Auto-load ──────────────────────────────────────────────────
+window.addEventListener('load', () => {
+    if (_base()) loadBilling();
+});
+// Refresh every 30s
+setInterval(() => { if (_base() && _orgId) loadBilling(); }, 30_000);
+</script>
+
+</body>
+</html>

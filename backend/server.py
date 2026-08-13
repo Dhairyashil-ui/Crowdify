@@ -3,6 +3,14 @@ import base64
 import json
 import logging
 import os
+
+# Load .env file (if present) before anything else reads os.environ
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass   # dotenv optional — env vars can be set externally
+
 import random
 import string
 import math
@@ -20,6 +28,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 from motor.motor_asyncio import AsyncIOMotorClient
+from wallet import wallet_router, set_wallet_db, consume_credits, get_demo_org, get_org_features_internal, FEATURE_PRICING, record_x402_usage
+from crowd_api import crowd_api_router
+import x402_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("CrowdPulse")
@@ -36,6 +47,10 @@ MAX_RECORDS_PER_SESSION = int(os.environ.get("MAX_RECORDS", 200))  # rolling cap
 GROQ_API_KEY          = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL            = "llama-3.1-8b-instant"
 GROQ_URL              = "https://api.groq.com/openai/v1/chat/completions"
+
+# ── Razorpay Config (consumed by wallet.py via env vars directly) ───────────────
+# Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment.
+# Use Razorpay Test Mode keys for the hackathon — no real money is charged.
 
 # LLM trigger intervals (seconds)
 LLM_PERIODIC_INTERVAL = 30    # periodic call every 30s
@@ -57,6 +72,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Wallet router (organisations + Croudify Credits + Razorpay) ────────────────
+# Mounted beside the pipeline — zero coupling to frame processing.
+app.include_router(wallet_router)
+
+# ── Crowd Intelligence API (x402-gated) ───────────────────────────────────────
+# POST /api/v1/crowd/predict — programmatic crowd intelligence for AI agents.
+# The x402 middleware is applied at startup() after the DB is ready.
+app.include_router(crowd_api_router)
 
 # ── YOLO model + ByteTrack ────────────────────────────────────────────────────
 ML_NODE_URL = os.environ.get("ML_NODE_URL")
@@ -853,7 +877,7 @@ def _compute_zone_record(
     else:
         flow_convergence = "LOW"
 
-    # \u2500\u2500 6. Compression trend \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    # ── 6. Compression trend ──────────────────────────────────────────────
     if zid not in zone_count_history:
         zone_count_history[zid] = deque(maxlen=ZONE_HISTORY_FRAMES)
     hist = zone_count_history[zid]
@@ -871,13 +895,13 @@ def _compute_zone_record(
 
     hist.append(n)
 
-    # \u2500\u2500 7. Exit occupancy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    # ── 7. Exit occupancy ─────────────────────────────────────────────────
     if meta.get("is_exit") and total_in_frame > 0:
         exit_occupancy = round(n / total_in_frame * 100, 1)
     else:
         exit_occupancy = None
 
-    # \u2500\u2500 8. Movement intensity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    # ── 8. Movement intensity ─────────────────────────────────────────────
     raw_intensity = avg_speed * n
     if raw_intensity < _INTENSITY_LOW:
         movement_intensity = "LOW"
@@ -1068,12 +1092,43 @@ async def startup():
         await db.zone_analytics.create_index(
             [("alert_level", 1), ("timestamp", -1)]
         )
+        # ── Wallet & Organisation indexes ─────────────────────────────────────
+        await db.organizations.create_index([("email", 1)], unique=True)
+        await db.organizations.create_index([("status", 1), ("created_at", -1)])
+        await db.wallets.create_index([("organization_id", 1)], unique=True)
+        await db.wallet_transactions.create_index(
+            [("organization_id", 1), ("created_at", -1)]
+        )
+        await db.wallet_transactions.create_index([("type", 1), ("status", 1)])
+        await db.cameras.create_index([("organization_id", 1)])
+        await db.cameras.create_index([("session_code", 1)], unique=True, sparse=True)
+        # ── Feature config index ─────────────────────────────────────────────────
+        await db.org_features.create_index([("organization_id", 1)], unique=True)
+        # ── Hand DB reference to wallet module ────────────────────────────────
+        set_wallet_db(db)
         logger.info(
             f"MongoDB Atlas connected. DB='{MONGO_DB}' TTL={MONGO_TTL_SECONDS}s "
             f"cap={MAX_RECORDS_PER_SESSION}"
         )
     except Exception as e:
         logger.error(f"MongoDB connection failed: {e}. Frames will NOT be persisted.")
+
+    # ── x402 payment middleware (programmatic API) ─────────────────────────────
+    # Conditionally gates POST /api/v1/crowd/predict with USDC micropayments.
+    # If X402_PAY_TO_ADDRESS env var is not set, the endpoint remains open.
+    x402_enabled = x402_config.init_x402()
+    if x402_enabled:
+        try:
+            from x402.http.middleware import PaymentMiddlewareASGI
+            app.add_middleware(
+                PaymentMiddlewareASGI,
+                routes=x402_config.get_route_config(),
+                server=x402_config.x402_server,
+            )
+            logger.info("[x402] PaymentMiddlewareASGI applied to /api/v1/crowd/predict")
+        except Exception as e:
+            logger.error(f"[x402] Middleware registration failed: {e}")
+
     asyncio.create_task(cleanup_expired_sessions())
 
 
@@ -2254,25 +2309,72 @@ async def websocket_camera(websocket: WebSocket, code: str):
                     )
                     result["zones"] = zones
 
+                    # ── AI Billing Engine (1-second Intelligence Unit) ─────────
+                    last_charged = getattr(session, "last_charged_ts", 0)
+                    has_credits = True
+                    if now - last_charged >= 1.0:
+                        try:
+                            # 1. Identify organization (For hackathon, use demo org)
+                            demo_org = await get_demo_org()
+                            org_id = demo_org["id"]
+
+                            # 2. Fetch enabled feature flags for this org
+                            features = await get_org_features_internal(org_id)
+
+                            # 3. Calculate cost based on enabled features only
+                            total_cost = sum(
+                                FEATURE_PRICING[k]
+                                for k, enabled in features.items()
+                                if enabled and k in FEATURE_PRICING
+                            )
+
+                            # 4. Debit wallet
+                            if total_cost > 0:
+                                has_credits = await consume_credits(org_id, "INTELLIGENCE_BUNDLE", total_cost)
+                            session.last_charged_ts = now
+                            # Cache features on the session for gating pipeline steps
+                            session._features_cache = features
+                        except Exception as e:
+                            logger.error(f"[{code}] [BILLING] Engine error: {e}")
+                            has_credits = False
+                    else:
+                        # Use cached features if available
+                        features = getattr(session, "_features_cache", {k: True for k in FEATURE_PRICING})
+
                     # ── Run prediction engine tick ─────────────────────────
-                    prediction = session.prediction_engine.tick(
-                        enriched_tracks = enriched_tracks,
-                        zones           = zones,
-                        global_flow_mag = result.get("global_flow_magnitude", 0.0),
-                        now             = now,
-                    )
-                    result["prediction"] = prediction
-
-                    # ── Derive alert_level from risk score (risk engine owns status) ──
-                    risk_score  = prediction["risk_score"]
-                    alert_level = prediction["risk_label"]   # SAFE / WARNING / CRITICAL
-                    result["status"]      = alert_level  # override PENDING from process_frame
-                    result["alert_level"] = alert_level
-
-                    logger.info(
-                        f"[{code}] [PREDICT] risk={risk_score:.1f} → {alert_level} "
-                        f"trend={prediction['trend']}"
-                    )
+                    if has_credits:
+                        prediction = session.prediction_engine.tick(
+                            enriched_tracks = enriched_tracks,
+                            zones           = zones,
+                            global_flow_mag = result.get("global_flow_magnitude", 0.0),
+                            now             = now,
+                        )
+                        result["prediction"] = prediction
+    
+                        # ── Derive alert_level from risk score (risk engine owns status) ──
+                        risk_score  = prediction["risk_score"]
+                        alert_level = prediction["risk_label"]   # SAFE / WARNING / CRITICAL
+                        result["status"]      = alert_level  # override PENDING from process_frame
+                        result["alert_level"] = alert_level
+    
+                        logger.info(
+                            f"[{code}] [PREDICT] risk={risk_score:.1f} → {alert_level} "
+                            f"trend={prediction['trend']}"
+                        )
+                    else:
+                        # Insufficient funds: degrade gracefully
+                        prediction = session.prediction_engine.current_state()
+                        result["prediction"] = prediction
+                        
+                        risk_score = prediction.get("risk_score", 0)
+                        alert_level = "INSUFFICIENT_FUNDS"
+                        
+                        result["status"] = alert_level
+                        result["alert_level"] = alert_level
+                        
+                        logger.warning(
+                            f"[{code}] [BILLING] Suspended advanced analytics due to insufficient funds."
+                        )
                     logger.info(
                         f"[{code}] [ZONES] "
                         + "  ".join(

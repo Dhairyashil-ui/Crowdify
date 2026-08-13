@@ -585,3 +585,114 @@ const savedCode = localStorage.getItem(CODE_STORAGE_KEY);
 if (savedHost) document.getElementById('serverUrlInput').value = savedHost;
 if (savedCode) document.getElementById('sessionCodeInput').value = savedCode;
 if (savedHost && savedCode) connectFromUI();
+
+// ── x402 API Demo (Step 20) ──────────────────────────────────────────────────
+// Simulates: POST → 402 → Algorand payment sign → retry → 200 OK
+async function x402DemoCall() {
+    const btn      = document.getElementById('x402TryBtn');
+    const flow     = document.getElementById('x402Flow');
+    const respPre  = document.getElementById('x402Response');
+    const steps    = [1,2,3,4,5].map(n => document.getElementById(`x402Step${n}`));
+
+    if (!btn) return;
+
+    // Reset UI
+    btn.disabled = true;
+    btn.textContent = '⏳ Running…';
+    flow.classList.remove('hidden');
+    respPre.classList.add('hidden');
+    steps.forEach(s => {
+        if (s) {
+            s.querySelector('span:first-child').style.background = 'rgba(255,255,255,0.08)';
+            s.style.color = '#6b7280';
+        }
+    });
+
+    const host = (localStorage.getItem(STORAGE_KEY) || 'http://localhost:8000').replace(/\/$/, '');
+
+    function _stepDone(n, color = '#34d399') {
+        const el = steps[n - 1];
+        if (el) {
+            el.querySelector('span:first-child').style.background = color;
+            el.style.color = color === '#34d399' ? '#d1fae5' : '#fca5a5';
+        }
+    }
+
+    function _stepActive(n) {
+        const el = steps[n - 1];
+        if (el) {
+            el.querySelector('span:first-child').style.background = '#8b5cf6';
+            el.style.color = '#c4b5fd';
+        }
+    }
+
+    async function _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    try {
+        // Step 1: Initial POST (expect 402 or 200 if x402 not configured)
+        _stepActive(1);
+        await _delay(400);
+        const r1 = await fetch(`${host}/api/v1/crowd/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ features: ['density','movement','risk_prediction'] }),
+        });
+        _stepDone(1);
+        await _delay(300);
+
+        if (r1.status === 402) {
+            // x402 is live — show full flow
+            _stepActive(2);
+            await _delay(500);
+            _stepDone(2);
+
+            _stepActive(3);
+            await _delay(800);   // Simulate signing
+            _stepDone(3);
+
+            _stepActive(4);
+            await _delay(400);
+            // Retry (in production, this carries the payment header)
+            const r2 = await fetch(`${host}/api/v1/crowd/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Demo-Mode': '1' },
+                body: JSON.stringify({ features: ['density','movement','risk_prediction'] }),
+            });
+            _stepDone(4);
+            await _delay(300);
+
+            _stepActive(5);
+            const data = r2.ok ? await r2.json() : { note: '402 active — payment proof required on live Algorand TestNet' };
+            _stepDone(5);
+            respPre.textContent = JSON.stringify(data, null, 2);
+
+        } else if (r1.ok) {
+            // x402 not configured — endpoint open, show result directly
+            [2, 3, 4].forEach(n => {
+                const el = steps[n - 1];
+                if (el) { el.style.opacity = '0.35'; el.style.textDecoration = 'line-through'; }
+            });
+            _stepActive(5);
+            await _delay(200);
+            const data = await r1.json();
+            _stepDone(5);
+            respPre.textContent = JSON.stringify(data, null, 2);
+            respPre.style.borderColor = 'rgba(52,211,153,0.3)';
+
+        } else {
+            throw new Error(`HTTP ${r1.status} — is the backend running?`);
+        }
+
+        respPre.classList.remove('hidden');
+        btn.textContent = '⚡ TRY AGAIN';
+
+    } catch (e) {
+        steps.forEach(s => { if (s) s.style.color = '#f87171'; });
+        respPre.textContent = `Error: ${e.message}\n\nMake sure the backend is running:\n  python server.py`;
+        respPre.style.borderColor = 'rgba(239,68,68,0.3)';
+        respPre.classList.remove('hidden');
+        btn.textContent = '⚡ TRY API';
+    } finally {
+        btn.disabled = false;
+    }
+}
