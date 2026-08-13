@@ -11,6 +11,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -133,6 +134,41 @@
 </head>
 
 <body class="min-h-screen p-3 md:p-5 font-sans text-gray-300">
+
+    <!-- ── AUTH OVERLAY ── -->
+    <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+        <div style="background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
+            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Croudify Login</div>
+            <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;">Developer access requires identity verification.</p>
+            <div id="g_id_onload"
+                 data-client_id="1022460608162-94dor169q04064eqglu41f4c0off90h7.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="filled_blue"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left"
+                 style="display:flex; justify-content:center;">
+            </div>
+        </div>
+    </div>
+    <script>
+        function handleCredentialResponse(response) {
+            if (response.credential) {
+                localStorage.setItem('croudify_auth', response.credential);
+                document.getElementById('authOverlay').style.display = 'none';
+            }
+        }
+        if (localStorage.getItem('croudify_auth')) {
+            document.getElementById('authOverlay').style.display = 'none';
+        }
+    </script>
 
     <div class="max-w-[1700px] w-full mx-auto flex flex-col gap-4">
 

@@ -6,6 +6,7 @@
     <title>Croudify — Command Center | Authority Portal</title>
     <meta name="description" content="Croudify Authority Portal — Emergency Operations Command Center for real-time crowd safety management and incident response.">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
     :root {
         --bg:           #060a0f;
@@ -43,6 +44,12 @@
         background: repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);
         pointer-events:none; z-index:9999;
     }
+
+    /* ── AUTH OVERLAY ── */
+    #authOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .auth-box { background:rgba(8,16,30,0.95); border:1px solid var(--border-mid); border-radius:12px; padding:3rem 2rem; text-align:center; max-width:400px; width:90%; box-shadow:0 0 30px rgba(0,183,255,0.05); }
+    .auth-title { font-family:'Orbitron',sans-serif; font-size:1.2rem; color:var(--text-bright); margin-bottom:0.5rem; letter-spacing:0.1em; }
+    .auth-sub { color:var(--text-dim); font-size:0.9rem; margin-bottom:2rem; }
 
     /* ── HEADER ── */
     .cmd-hdr {
@@ -705,9 +712,46 @@
     }
     .low-bal-dismiss:hover { color: var(--watch); }
     @keyframes lowbal-in { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+
     </style>
 </head>
 <body>
+
+    <!-- ── AUTH OVERLAY ── -->
+    <div id="authOverlay">
+        <div class="auth-box">
+            <div class="auth-title">AUTHORITY PORTAL</div>
+            <p class="auth-sub">Secure command center access requires identity verification.</p>
+            <div id="g_id_onload"
+                 data-client_id="1022460608162-94dor169q04064eqglu41f4c0off90h7.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="filled_black"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left"
+                 style="display:flex; justify-content:center;">
+            </div>
+        </div>
+    </div>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        function handleCredentialResponse(response) {
+            if (response.credential) {
+                localStorage.setItem('croudify_auth', response.credential);
+                document.getElementById('authOverlay').style.display = 'none';
+            }
+        }
+        if (localStorage.getItem('croudify_auth')) {
+            document.getElementById('authOverlay').style.display = 'none';
+        }
+    </script>
 
 <!-- ══ COMMAND CENTER HEADER ══════════════════════════════════════════ -->
 <header class="cmd-hdr">
