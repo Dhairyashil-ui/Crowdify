@@ -877,8 +877,11 @@ function _renderWalletTxns(txns) {
 function openRechargeModal() {
     _rchSelectedAmt = null;
     document.getElementById('rchProceedBtn').disabled = true;
+    const input = document.getElementById('customRchAmtAuth');
+    if (input) input.value = '';
     ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
-        document.getElementById(id).classList.remove('selected');
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
     });
     document.getElementById('rechargeModal').classList.remove('hidden');
 }
@@ -894,11 +897,32 @@ function _rchBackdropClick(e) {
 
 function selectRchAmount(amount) {
     _rchSelectedAmt = amount;
+    const input = document.getElementById('customRchAmtAuth');
+    if (input) input.value = '';
     ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
-        document.getElementById(id).classList.remove('selected');
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
     });
-    document.getElementById(`rchBtn${amount}`).classList.add('selected');
+    const selectedBtn = document.getElementById(`rchBtn${amount}`);
+    if (selectedBtn) selectedBtn.classList.add('selected');
     document.getElementById('rchProceedBtn').disabled = false;
+}
+
+function updateCustomAmtAuth() {
+    const input = document.getElementById('customRchAmtAuth');
+    if (!input) return;
+    const val = parseInt(input.value, 10);
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
+    });
+    if (isNaN(val) || val < 1) {
+        _rchSelectedAmt = null;
+        document.getElementById('rchProceedBtn').disabled = true;
+    } else {
+        _rchSelectedAmt = val;
+        document.getElementById('rchProceedBtn').disabled = false;
+    }
 }
 
 // ── Razorpay checkout ─────────────────────────────────────────

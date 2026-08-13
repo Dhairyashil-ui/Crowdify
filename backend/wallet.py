@@ -415,8 +415,8 @@ async def create_razorpay_order(body: RechargeRequest):
     await _get_org_or_404(body.organization_id)
     await _get_wallet_or_404(body.organization_id)
 
-    if body.amount_inr not in (100, 500, 1000):
-        raise HTTPException(status_code=400, detail="amount_inr must be 100, 500, or 1000")
+    if body.amount_inr < 1:
+        raise HTTPException(status_code=400, detail="amount_inr must be at least 1")
 
     if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
         raise HTTPException(

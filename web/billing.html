@@ -258,6 +258,13 @@
 <div class="modal-overlay hidden" id="rechargeModal" onclick="_rchBackdrop(event)">
     <div class="modal-box">
         <div class="modal-title">RECHARGE WALLET</div>
+        <div style="margin: 1rem 0;">
+            <label style="color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; display: block; margin-bottom: 0.5rem;">ENTER AMOUNT (INR)</label>
+            <div style="position: relative;">
+                <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-weight: bold;">₹</span>
+                <input type="number" id="customRchAmt" min="1" oninput="updateCustomAmt()" placeholder="e.g. 100" style="width: 100%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1rem 1rem 2.5rem; color: #fff; font-size: 1.25rem; font-weight: bold; outline: none;">
+            </div>
+        </div>
         <div class="amount-grid">
             <div class="amt-btn" id="rchBtn100"  onclick="selectAmt(100)">₹100<br><small style="font-size:0.65rem;color:var(--text-dim)">100 Credits</small></div>
             <div class="amt-btn" id="rchBtn500"  onclick="selectAmt(500)">₹500<br><small style="font-size:0.65rem;color:var(--text-dim)">500 Credits</small></div>
@@ -491,16 +498,44 @@ function _updateLowBal(data) {
 function openRecharge() {
     _selectedAmt = null;
     document.getElementById('rchProceedBtn').disabled = true;
-    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => document.getElementById(id).classList.remove('selected'));
+    const input = document.getElementById('customRchAmt');
+    if (input) input.value = '';
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
+    });
     document.getElementById('rechargeModal').classList.remove('hidden');
 }
 function closeRecharge() { document.getElementById('rechargeModal').classList.add('hidden'); }
 function _rchBackdrop(e) { if (e.target.id === 'rechargeModal') closeRecharge(); }
 function selectAmt(a) {
     _selectedAmt = a;
-    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => document.getElementById(id).classList.remove('selected'));
-    document.getElementById(`rchBtn${a}`).classList.add('selected');
+    const input = document.getElementById('customRchAmt');
+    if (input) input.value = '';
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
+    });
+    const selectedBtn = document.getElementById(`rchBtn${a}`);
+    if (selectedBtn) selectedBtn.classList.add('selected');
     document.getElementById('rchProceedBtn').disabled = false;
+}
+
+function updateCustomAmt() {
+    const input = document.getElementById('customRchAmt');
+    if (!input) return;
+    const val = parseInt(input.value, 10);
+    ['rchBtn100','rchBtn500','rchBtn1000'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('selected');
+    });
+    if (isNaN(val) || val < 1) {
+        _selectedAmt = null;
+        document.getElementById('rchProceedBtn').disabled = true;
+    } else {
+        _selectedAmt = val;
+        document.getElementById('rchProceedBtn').disabled = false;
+    }
 }
 
 async function initiateRazorpay() {
