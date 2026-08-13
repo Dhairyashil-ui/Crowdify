@@ -137,7 +137,7 @@
 
     <!-- ── AUTH OVERLAY ── -->
     <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
-        <div style="background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
+        <div id="authStep1" style="background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
             <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Croudify Login</div>
             <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;">Developer access requires identity verification.</p>
             <div id="g_id_onload"
@@ -157,14 +157,79 @@
                  style="display:flex; justify-content:center;">
             </div>
         </div>
+        
+        <div id="authStep2" style="display:none; background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:left;max-width:400px;width:90%;">
+            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;text-align:center;">COMPLETE PROFILE</div>
+            <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;text-align:center;">Provide organization details to create your secure account.</p>
+            
+            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Organization Name</label>
+            <input type="text" id="authName" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
+            
+            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Department / Division</label>
+            <input type="text" id="authDept" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
+            
+            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Contact Number</label>
+            <input type="text" id="authPhone" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1.5rem; outline:none;">
+            
+            <button onclick="submitAuthProfile()" style="width:100%; background:#1a73e8; color:#fff; font-weight:600; padding:0.8rem; border-radius:0.5rem; border:none; cursor:pointer;">ENTER DASHBOARD</button>
+        </div>
     </div>
     <script>
+        let tempEmail = "";
+        let tempName = "";
+        
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
         function handleCredentialResponse(response) {
             if (response.credential) {
-                localStorage.setItem('croudify_auth', response.credential);
-                document.getElementById('authOverlay').style.display = 'none';
+                const payload = decodeJwtResponse(response.credential);
+                tempEmail = payload.email;
+                tempName = payload.name;
+                
+                document.getElementById('authStep1').style.display = 'none';
+                document.getElementById('authStep2').style.display = 'block';
+                document.getElementById('authName').value = tempName + " Org";
             }
         }
+        
+        async function submitAuthProfile() {
+            const name = document.getElementById('authName').value;
+            const dept = document.getElementById('authDept').value;
+            const phone = document.getElementById('authPhone').value;
+            
+            try {
+                // Try sending to the backend to store the authority details
+                const base = document.getElementById('backendUrl') ? document.getElementById('backendUrl').value.trim().replace(/\/$/, '') : 'http://localhost:8000';
+                const resp = await fetch(`${base}/org/create`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: name, email: tempEmail, department: dept, phone: phone })
+                });
+                if(resp.ok) {
+                    const data = await resp.json();
+                    if(data.organisation && data.organisation.id) {
+                        localStorage.setItem('croudify_org_id', data.organisation.id);
+                        if (document.getElementById('orgCodeInput')) {
+                            document.getElementById('orgCodeInput').value = data.organisation.id;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log("Could not sync with backend, proceeding anyway");
+            }
+            
+            localStorage.setItem('croudify_auth', 'true');
+            localStorage.setItem('croudify_email', tempEmail);
+            document.getElementById('authOverlay').style.display = 'none';
+        }
+        
         if (localStorage.getItem('croudify_auth')) {
             document.getElementById('authOverlay').style.display = 'none';
         }

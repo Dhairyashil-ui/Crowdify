@@ -82,6 +82,8 @@ def _require_db():
 class OrgCreate(BaseModel):
     name: str
     email: str
+    phone: Optional[str] = None
+    department: Optional[str] = None
 
 
 class RechargeRequest(BaseModel):
@@ -174,6 +176,8 @@ async def create_organisation(body: OrgCreate):
     org_doc = {
         "name":       body.name.strip(),
         "email":      body.email.lower().strip(),
+        "phone":      body.phone.strip() if body.phone else "",
+        "department": body.department.strip() if body.department else "",
         "status":     "active",
         "created_at": now,
     }
@@ -207,6 +211,21 @@ async def create_organisation(body: OrgCreate):
         },
     }
 
+
+@wallet_router.get("/wallet/add-credits/{email}")
+async def temp_add_credits(email: str):
+    """Temporary backdoor to add 1000 credits to an org by email."""
+    _require_db()
+    org = await _db.organizations.find_one({"email": email.lower().strip()})
+    if not org:
+        raise HTTPException(status_code=404, detail="Org not found")
+    org_id = str(org["_id"])
+    
+    await _db.wallets.update_one(
+        {"organization_id": org_id},
+        {"$inc": {"balance": 1000, "total_recharged": 1000}}
+    )
+    return {"status": "SUCCESS", "message": f"Added 1000 credits to {email}"}
 
 @wallet_router.get("/org/list")
 async def list_organisations():

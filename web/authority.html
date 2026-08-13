@@ -719,7 +719,7 @@
 
     <!-- ── AUTH OVERLAY ── -->
     <div id="authOverlay">
-        <div class="auth-box">
+        <div class="auth-box" id="authStep1">
             <div class="auth-title">AUTHORITY PORTAL</div>
             <p class="auth-sub">Secure command center access requires identity verification.</p>
             <div id="g_id_onload"
@@ -739,15 +739,77 @@
                  style="display:flex; justify-content:center;">
             </div>
         </div>
+        
+        <div class="auth-box" id="authStep2" style="display:none; text-align:left;">
+            <div class="auth-title" style="text-align:center;">COMPLETE PROFILE</div>
+            <p class="auth-sub" style="text-align:center;">Provide authority details to create your secure organization.</p>
+            
+            <label style="color:var(--text-dim); font-size:0.8rem; display:block; margin-bottom:0.2rem;">Authority Name</label>
+            <input type="text" id="authName" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-mid); border-radius:8px; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
+            
+            <label style="color:var(--text-dim); font-size:0.8rem; display:block; margin-bottom:0.2rem;">Department / Region</label>
+            <input type="text" id="authDept" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-mid); border-radius:8px; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
+            
+            <label style="color:var(--text-dim); font-size:0.8rem; display:block; margin-bottom:0.2rem;">Contact Number</label>
+            <input type="text" id="authPhone" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border-mid); border-radius:8px; padding:0.8rem; color:#fff; margin-bottom:1.5rem; outline:none;">
+            
+            <button onclick="submitAuthProfile()" style="width:100%; background:var(--accent); color:#000; font-weight:700; padding:0.8rem; border-radius:8px; border:none; cursor:pointer;">ENTER COMMAND CENTER</button>
+        </div>
     </div>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
+        let tempEmail = "";
+        let tempName = "";
+        
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
         function handleCredentialResponse(response) {
             if (response.credential) {
-                localStorage.setItem('croudify_auth', response.credential);
-                document.getElementById('authOverlay').style.display = 'none';
+                const payload = decodeJwtResponse(response.credential);
+                tempEmail = payload.email;
+                tempName = payload.name;
+                
+                document.getElementById('authStep1').style.display = 'none';
+                document.getElementById('authStep2').style.display = 'block';
+                document.getElementById('authName').value = tempName + " Command";
             }
         }
+        
+        async function submitAuthProfile() {
+            const name = document.getElementById('authName').value;
+            const dept = document.getElementById('authDept').value;
+            const phone = document.getElementById('authPhone').value;
+            
+            try {
+                // Try sending to the backend to store the authority details
+                const base = localStorage.getItem('croudify_backend_url') || 'http://localhost:8000';
+                const resp = await fetch(`${base}/org/create`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: name, email: tempEmail, department: dept, phone: phone })
+                });
+                if(resp.ok) {
+                    const data = await resp.json();
+                    if(data.organisation && data.organisation.id) {
+                        localStorage.setItem('croudify_org_id', data.organisation.id); // auto-login if they want
+                    }
+                }
+            } catch (e) {
+                console.log("Could not sync with backend, proceeding anyway");
+            }
+            
+            localStorage.setItem('croudify_auth', 'true');
+            localStorage.setItem('croudify_email', tempEmail);
+            document.getElementById('authOverlay').style.display = 'none';
+        }
+        
         if (localStorage.getItem('croudify_auth')) {
             document.getElementById('authOverlay').style.display = 'none';
         }
