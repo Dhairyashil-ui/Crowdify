@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Croudify — AI Crowd Intelligence Platform</title>
     <meta name="description" content="Croudify — Real-time AI crowd safety management. Monitor density, predict risks, protect lives. Pay-per-use, no subscription.">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="icon" type="image/png" href="app_logo.png"><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
     /* ── GOOGLE MATERIAL RESET ───────────────────────────────────── */
@@ -162,16 +162,6 @@
         transition: all 0.18s;
     }
     .btn-hero-primary:hover { background: var(--g-blue-dk); box-shadow: 0 4px 16px rgba(26,115,232,0.45); transform: translateY(-1px); }
-    
-    .btn-hero-android {
-        padding: 12px 28px; border-radius: 24px;
-        font-family: 'Google Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
-        background: rgba(61, 220, 132, 0.1); color: #3ddc84; border: 1.5px solid #3ddc84;
-        cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-        transition: all 0.18s; backdrop-filter: blur(8px);
-    }
-    .btn-hero-android:hover { background: rgba(61, 220, 132, 0.2); box-shadow: 0 4px 16px rgba(61, 220, 132, 0.3); transform: translateY(-1px); }
-
     .btn-hero-outline {
         padding: 11px 28px; border-radius: 24px;
         font-family: 'Google Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
@@ -354,10 +344,9 @@
     }
     .footer-brand { font-family: 'Google Sans', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--g-text); margin-bottom: 8px; }
     .footer-brand span { color: var(--g-blue); }
-    .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
-    .footer-links a { font-size: 0.82rem; color: var(--g-text-2); text-decoration: none; transition: color 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+    .footer-links a { font-size: 0.82rem; color: var(--g-text-2); text-decoration: none; transition: color 0.15s; }
     .footer-links a:hover { color: var(--g-blue); }
-    .footer-links a.android-link:hover { color: #3ddc84; }
     .footer-note { font-size: 0.75rem; color: var(--g-text-3); }
 
     /* ── AUTH OVERLAY ── */
@@ -385,9 +374,7 @@
 <!-- ══ NAV ══════════════════════════════════════════════════════════ -->
 <nav class="nav">
     <a href="index.html" class="brand">
-        <div class="brand-logo">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-        </div>
+        <div class="brand-logo"><img src="app_logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit;"></div>
         <span class="brand-name">Croud<span>ify</span></span>
     </a>
     <div class="nav-divider"></div>
@@ -427,10 +414,6 @@
             <a href="javascript:void(0)" onclick="openAuthModal()" class="btn-hero-primary" id="heroStartBtn">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 Open Command Center
-            </a>
-            <a href="https://github.com/Dhairyashil-ui/Crowdify" class="btn-hero-android" target="_blank">
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.415.415 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0215 3.5013C15.5262 8.2435 13.8211 7.8291 12 7.8291c-1.8211 0-3.5262.4144-5.1376 1.1194L4.841 5.447a.415.415 0 0 0-.5676-.1521.415.415 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
-                Get Android App
             </a>
             <a href="#pricing" class="btn-hero-outline">
                 View Pricing
@@ -666,10 +649,6 @@
         <a href="developer.html">Command Center</a>
         <a href="billing.html">Billing</a>
         <a href="developer.html">Developer API</a>
-        <a href="https://github.com/Dhairyashil-ui/Crowdify" class="android-link" target="_blank">
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.415.415 0 0 0-.1521-.5676.416.416 0 0 0-.5676.1521l-2.0215 3.5013C15.5262 8.2435 13.8211 7.8291 12 7.8291c-1.8211 0-3.5262.4144-5.1376 1.1194L4.841 5.447a.415.415 0 0 0-.5676-.1521.415.415 0 0 0-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
-            Download for Android
-        </a>
     </div>
     <div class="footer-note">Built for GDG Hackathon · ₹1 = 1 Croudify Credit · Test mode active</div>
 </footer>
