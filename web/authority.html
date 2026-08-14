@@ -760,56 +760,98 @@
     <script>
         let tempEmail = "";
         let tempName = "";
-        
+
         function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                window.atob(base64).split('').map(c =>
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join('')
+            );
             return JSON.parse(jsonPayload);
         }
 
-        function handleCredentialResponse(response) {
-            if (response.credential) {
-                const payload = decodeJwtResponse(response.credential);
-                tempEmail = payload.email;
-                tempName = payload.name;
-                
-                document.getElementById('authStep1').style.display = 'none';
-                document.getElementById('authStep2').style.display = 'block';
-                document.getElementById('authName').value = tempName + " Command";
-            }
-        }
-        
-        async function submitAuthProfile() {
-            const name = document.getElementById('authName').value;
-            const dept = document.getElementById('authDept').value;
-            const phone = document.getElementById('authPhone').value;
-            
+        async function handleCredentialResponse(response) {
+            if (!response.credential) return;
+            const payload = decodeJwtResponse(response.credential);
+            tempEmail = payload.email;
+            tempName  = payload.name;
+
+            // ── Check if this authority already has an account ──────────────
+            const base = localStorage.getItem('croudify_backend_url') || 'http://localhost:8000';
             try {
-                // Try sending to the backend to store the authority details
-                const base = localStorage.getItem('croudify_backend_url') || 'http://localhost:8000';
+                const r = await fetch(`${base}/org/by-email?email=${encodeURIComponent(tempEmail)}`);
+                if (r.ok) {
+                    // Returning authority — log straight in
+                    const data = await r.json();
+                    localStorage.setItem('croudify_auth',     'true');
+                    localStorage.setItem('croudify_email',    tempEmail);
+                    localStorage.setItem('croudify_org_id',   data.id);
+                    localStorage.setItem('croudify_org_name', data.name || tempName);
+                    // Refresh wallet in header immediately
+                    if (typeof loadWalletBalance === 'function') loadWalletBalance();
+                    document.getElementById('authOverlay').style.display = 'none';
+                    return;
+                }
+            } catch (e) {
+                // Backend offline — fall through to profile form
+            }
+
+            // New authority — show profile completion form
+            document.getElementById('authStep1').style.display = 'none';
+            document.getElementById('authStep2').style.display = 'block';
+            document.getElementById('authName').value = tempName + " Authority";
+        }
+
+        async function submitAuthProfile() {
+            const name  = document.getElementById('authName').value.trim();
+            const dept  = document.getElementById('authDept').value.trim();
+            const phone = document.getElementById('authPhone').value.trim();
+
+            if (!name) { alert('Please enter an authority name.'); return; }
+
+            const btn = document.querySelector('#authStep2 button[onclick="submitAuthProfile()"]');
+            if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
+
+            const base = localStorage.getItem('croudify_backend_url') || 'http://localhost:8000';
+            try {
                 const resp = await fetch(`${base}/org/create`, {
-                    method: 'POST',
+                    method:  'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name: name, email: tempEmail, department: dept, phone: phone })
+                    body: JSON.stringify({
+                        name:       name,
+                        email:      tempEmail,
+                        department: dept,
+                        phone:      phone
+                    })
                 });
-                if(resp.ok) {
+                if (resp.ok) {
                     const data = await resp.json();
-                    if(data.organisation && data.organisation.id) {
-                        localStorage.setItem('croudify_org_id', data.organisation.id); // auto-login if they want
+                    if (data.organisation && data.organisation.id) {
+                        localStorage.setItem('croudify_org_id',   data.organisation.id);
+                        localStorage.setItem('croudify_org_name', data.organisation.name || name);
+                    }
+                } else if (resp.status === 409) {
+                    // Already exists (race condition) — look up
+                    const r2 = await fetch(`${base}/org/by-email?email=${encodeURIComponent(tempEmail)}`);
+                    if (r2.ok) {
+                        const d2 = await r2.json();
+                        localStorage.setItem('croudify_org_id',   d2.id);
+                        localStorage.setItem('croudify_org_name', d2.name || name);
                     }
                 }
             } catch (e) {
-                console.log("Could not sync with backend, proceeding anyway");
+                console.warn('[AUTH] Could not sync with backend, proceeding locally:', e);
             }
-            
-            localStorage.setItem('croudify_auth', 'true');
+
+            localStorage.setItem('croudify_auth',  'true');
             localStorage.setItem('croudify_email', tempEmail);
+            if (typeof loadWalletBalance === 'function') loadWalletBalance();
             document.getElementById('authOverlay').style.display = 'none';
         }
-        
+
+        // Restore session if already authenticated
         if (localStorage.getItem('croudify_auth')) {
             document.getElementById('authOverlay').style.display = 'none';
         }
@@ -855,6 +897,7 @@
     <a href="index.html" class="dev-link" title="Switch to developer dashboard">⌥ DEV VIEW</a>
     <!-- Nav links + compact wallet widget -->
     <div style="margin-left:auto;display:flex;align-items:center;gap:0.75rem;">
+        <a href="landing.html" style="padding:0.28rem 0.8rem;border-radius:5px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-decoration:none;color:var(--text-dim);border:1px solid transparent;transition:all 0.18s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='rgba(0,183,255,0.25)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='transparent'">HOME</a>
         <a href="billing.html" style="padding:0.28rem 0.8rem;border-radius:5px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-decoration:none;color:var(--text-dim);border:1px solid transparent;transition:all 0.18s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='rgba(0,183,255,0.25)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='transparent'">BILLING</a>
         <a href="index.html"   style="padding:0.28rem 0.8rem;border-radius:5px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-decoration:none;color:var(--text-dim);border:1px solid transparent;transition:all 0.18s;" onmouseover="this.style.color='var(--accent)';this.style.borderColor='rgba(0,183,255,0.25)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='transparent'">DEVELOPER</a>
         <!-- Compact wallet widget -->

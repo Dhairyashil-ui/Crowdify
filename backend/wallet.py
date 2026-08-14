@@ -87,8 +87,10 @@ def _require_db():
 # ── Pydantic models ────────────────────────────────────────────────────────────
 
 class OrgCreate(BaseModel):
-    name: str
-    email: str
+    name:       str
+    email:      str
+    department: str = ""
+    phone:      str = ""
 
 
 class RechargeRequest(BaseModel):
@@ -181,6 +183,8 @@ async def create_organisation(body: OrgCreate):
     org_doc = {
         "name":       body.name.strip(),
         "email":      body.email.lower().strip(),
+        "department": body.department.strip(),
+        "phone":      body.phone.strip(),
         "status":     "active",
         "created_at": now,
     }
@@ -203,6 +207,8 @@ async def create_organisation(body: OrgCreate):
             "id":         org_id_str,
             "name":       org_doc["name"],
             "email":      org_doc["email"],
+            "department": org_doc["department"],
+            "phone":      org_doc["phone"],
             "status":     org_doc["status"],
             "created_at": _iso(now),
         },
@@ -252,6 +258,35 @@ async def list_organisations():
     ]
 
 
+@wallet_router.get("/org/by-email")
+async def get_org_by_email(email: str):
+    """
+    Look up an existing authority organisation by email address.
+    Called by the frontend on Google sign-in to detect returning authorities.
+    Returns 404 if this email has not registered yet.
+    """
+    _require_db()
+    doc = await _db.organizations.find_one({"email": email.lower().strip()})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Authority not registered")
+    org_id_str = str(doc["_id"])
+    wallet = await _db.wallets.find_one({"organization_id": org_id_str})
+    balance = wallet.get("balance", 0) if wallet else 0
+    return {
+        "id":                    org_id_str,
+        "name":                  doc.get("name", ""),
+        "email":                 doc.get("email", ""),
+        "department":            doc.get("department", ""),
+        "phone":                 doc.get("phone", ""),
+        "status":                doc.get("status", "active"),
+        "created_at":            _iso(doc.get("created_at")),
+        "balance":               balance,
+        "currency":              "CREDIT",
+        "low_balance_threshold": LOW_BALANCE_THRESHOLD,
+        "low_balance":           balance <= LOW_BALANCE_THRESHOLD,
+    }
+
+
 @wallet_router.get("/org/{org_id}")
 async def get_organisation(org_id: str):
     """Return a single organisation by id."""
@@ -261,6 +296,8 @@ async def get_organisation(org_id: str):
         "id":         str(doc["_id"]),
         "name":       doc.get("name", ""),
         "email":      doc.get("email", ""),
+        "department": doc.get("department", ""),
+        "phone":      doc.get("phone", ""),
         "status":     doc.get("status", "active"),
         "created_at": _iso(doc.get("created_at")),
     }
