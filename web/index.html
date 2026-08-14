@@ -860,9 +860,9 @@ async function submitAuthProfile() {
         
         localStorage.setItem('croudify_auth', 'true');
         localStorage.setItem('croudify_email', tempEmail);
-        localStorage.setItem('croudify_org_id', data.id);
-        localStorage.setItem('croudify_org_name', data.name);
-        window.location.href = 'authority.html';
+        localStorage.setItem('croudify_org_id', data.organisation.id);
+        localStorage.setItem('croudify_org_name', data.organisation.name);
+        window.location.href = 'developer.html';
     } catch (e) {
         showToast('Error creating profile','error');
         btn.textContent = "FINISH SETUP"; btn.disabled = false;
