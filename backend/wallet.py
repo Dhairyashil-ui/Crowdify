@@ -733,7 +733,7 @@ async def debit_ai_usage(body: UsageDebitRequest):
 
 # ── Credit Engine (Python API) ─────────────────────────────────────────────────
 
-async def consume_credits(organization_id: str, feature: str, amount: int) -> bool:
+async def consume_credits(organization_id: str, feature: str, amount: float) -> bool:
     """
     Core backend function to deduct credits directly from the server pipeline.
     

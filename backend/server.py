@@ -2314,9 +2314,12 @@ async def websocket_camera(websocket: WebSocket, code: str):
                     has_credits = True
                     if now - last_charged >= 1.0:
                         try:
-                            # 1. Identify organization (For hackathon, use demo org)
-                            demo_org = await get_demo_org()
-                            org_id = demo_org["id"]
+                            # 1. Identify organization
+                            if hasattr(session, "org_id") and session.org_id:
+                                org_id = session.org_id
+                            else:
+                                demo_org = await get_demo_org()
+                                org_id = demo_org["id"]
 
                             # 2. Fetch enabled feature flags for this org
                             features = await get_org_features_internal(org_id)
@@ -2531,13 +2534,16 @@ async def websocket_camera(websocket: WebSocket, code: str):
 
 # ── WebSocket: Dashboard (Web Browser) ────────────────────────────────────────
 @app.websocket("/ws/dashboard/{code}")
-async def websocket_dashboard(websocket: WebSocket, code: str):
+async def websocket_dashboard(websocket: WebSocket, code: str, org_id: str = None):
     code = code.upper()
     session = get_session(code)
     if session is None:
         sessions[code] = Session(code)
         session = sessions[code]
         logger.info(f"[{code}] Session auto-created from dashboard.")
+        
+    if org_id:
+        session.org_id = org_id
 
     await websocket.accept()
     session.dashboard_connections.append(websocket)
