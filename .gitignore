@@ -24,6 +24,7 @@ venv/
 *.avi
 *.mp4
 *.mov
+!web/moon-walk.mp4
 
 # Logs
 *.log
