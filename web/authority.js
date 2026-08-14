@@ -587,7 +587,7 @@ async function authorityConnect() {
     const rawHost=document.getElementById('authUrl').value.trim();
     const code=document.getElementById('authCode').value.trim().toUpperCase();
     const host=rawHost.replace(/^wss?:\/\//,'').replace(/^https?:\/\//,'');
-    if (!host||code.length<6) { alert('Enter backend URL and a 6-character session code.'); return; }
+    if (!host||code.length<6) { alert('Enter a 6-character session code.'); return; }
 
     // ── Balance check before allowing connection ──────────────────────────
     const orgId = localStorage.getItem('croudify_org_id');
@@ -721,14 +721,7 @@ let _rzpKeyId         = '';     // populated from create-order response
 
 // ── Derive backend base from the existing authority URL input ──
 function _walletBackendBase() {
-    const raw = (document.getElementById('authUrl') || {}).value || '';
-    let url = raw.trim().replace(/\/+$/, '');
-    if (!url) return '';
-    if (!url.startsWith('http')) {
-        const local = url.startsWith('localhost') || url.startsWith('127.') || url.startsWith('10.');
-        url = (local ? 'http://' : 'https://') + url;
-    }
-    return url;
+    return 'https://crowdify-41sx.onrender.com';
 }
 
 // ── Init on page load ─────────────────────────────────────────

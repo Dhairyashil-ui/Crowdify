@@ -1028,8 +1028,8 @@
     <!-- ── MAP SECTION ──────────────────────────────────────────── -->
     <section class="map-sect">
         <div class="conn-bar">
-            <span class="cb-lbl">BACKEND URL</span>
-            <input id="authUrl" class="cb-in" type="text" placeholder="host or localhost:8000" style="width:185px;">
+            <!-- Backend URL is hardcoded and hidden -->
+            <input id="authUrl" type="hidden" value="crowdify-41sx.onrender.com">
             <span class="cb-lbl">SESSION</span>
             <input id="authCode" class="cb-in" type="text" placeholder="6-CHAR CODE" maxlength="6" style="width:102px;text-transform:uppercase;">
             <button class="cb-btn" onclick="authorityConnect()">▶ CONNECT</button>
