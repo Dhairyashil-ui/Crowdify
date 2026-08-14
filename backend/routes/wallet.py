@@ -187,7 +187,7 @@ async def create_organisation(body: OrgCreate):
     # ── Create wallet ──────────────────────────────────────────────────────────
     wallet_doc = {
         "organization_id": org_id_str,
-        "balance":         0,
+        "balance":         100,
         "currency":        "CREDIT",
         "updated_at":      now,
     }
@@ -206,7 +206,7 @@ async def create_organisation(body: OrgCreate):
         "wallet": {
             "id":              str(wallet_result.inserted_id),
             "organization_id": org_id_str,
-            "balance":         0,
+            "balance":         100,
             "currency":        "CREDIT",
         },
     }
@@ -286,7 +286,7 @@ async def get_demo_org():
 
         wallet_doc = {
             "organization_id": org_id_str,
-            "balance":         0,
+            "balance":         100,
             "currency":        "CREDIT",
             "updated_at":      now,
         }
