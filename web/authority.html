@@ -7,6 +7,28 @@
     <meta name="description" content="Croudify Authority Portal — Emergency Operations Command Center for real-time crowd safety management and incident response.">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- ── STRICT AUTH GUARD — runs before page renders ── -->
+    <script>
+    (function() {
+        'use strict';
+        var auth  = localStorage.getItem('croudify_auth');
+        var orgId = localStorage.getItem('croudify_org_id');
+        // If user has auth but no org_id (legacy session), keep them for Google sign-in
+        // If completely unauthenticated → redirect to landing
+        if (!auth) {
+            // They haven't signed in at all — go to landing page
+            if (window.location.pathname.indexOf('authority') !== -1) {
+                // small delay so the authOverlay CSS loads first; then hide body
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.body.style.visibility = 'hidden';
+                });
+            }
+        }
+        // Store: after signup we need the org_id. If auth but no orgId, show overlay.
+    })();
+    </script>
+
     <style>
     :root {
         --bg:           #060a0f;
@@ -47,9 +69,40 @@
 
     /* ── AUTH OVERLAY ── */
     #authOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-    .auth-box { background:rgba(8,16,30,0.95); border:1px solid var(--border-mid); border-radius:12px; padding:3rem 2rem; text-align:center; max-width:400px; width:90%; box-shadow:0 0 30px rgba(0,183,255,0.05); }
+    .auth-box { background:rgba(8,16,30,0.95); border:1px solid var(--border-mid); border-radius:12px; padding:3rem 2rem; text-align:center; max-width:420px; width:90%; box-shadow:0 0 30px rgba(0,183,255,0.05); }
     .auth-title { font-family:'Orbitron',sans-serif; font-size:1.2rem; color:var(--text-bright); margin-bottom:0.5rem; letter-spacing:0.1em; }
     .auth-sub { color:var(--text-dim); font-size:0.9rem; margin-bottom:2rem; }
+
+    /* ── NO-BALANCE GATE OVERLAY ── */
+    #noBalanceGate {
+        position: fixed; inset: 0; z-index: 99990;
+        background: rgba(4,7,12,0.96); backdrop-filter: blur(16px);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 1.2rem; text-align: center; padding: 2rem;
+    }
+    #noBalanceGate.hidden { display: none; }
+    .nbg-icon { font-size: 3rem; }
+    .nbg-title {
+        font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700;
+        color: var(--text-bright); letter-spacing: 0.1em;
+    }
+    .nbg-sub { font-size: 0.9rem; color: var(--text-dim); max-width: 360px; line-height: 1.6; }
+    .nbg-bal {
+        font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900;
+        color: var(--critical); text-shadow: 0 0 24px rgba(255,59,59,0.4);
+    }
+    .nbg-recharge-btn {
+        padding: 0.85rem 2.2rem; border-radius: 8px; border: none; cursor: pointer;
+        background: linear-gradient(135deg, rgba(0,183,255,0.2), rgba(0,183,255,0.08));
+        border: 2px solid var(--accent); color: var(--text-bright);
+        font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 700;
+        letter-spacing: 0.12em; transition: all 0.2s;
+        box-shadow: 0 0 20px rgba(0,183,255,0.18);
+        text-decoration: none; display: inline-block;
+    }
+    .nbg-recharge-btn:hover { box-shadow: 0 0 36px rgba(0,183,255,0.38); transform: translateY(-2px); }
+    .nbg-skip { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem; cursor: pointer; text-decoration: underline; }
+    .nbg-skip:hover { color: var(--text); }
 
     /* ── HEADER ── */
     .cmd-hdr {
@@ -847,15 +900,74 @@
 
             localStorage.setItem('croudify_auth',  'true');
             localStorage.setItem('croudify_email', tempEmail);
-            if (typeof loadWalletBalance === 'function') loadWalletBalance();
+            // Show body now auth is done
+            document.body.style.visibility = 'visible';
             document.getElementById('authOverlay').style.display = 'none';
+            // Immediately check balance — if 0, show no-balance gate
+            await _checkBalanceGate();
         }
 
-        // Restore session if already authenticated
-        if (localStorage.getItem('croudify_auth')) {
+        // ── On page load: enforce auth + balance ──────────────────────
+        (async function initAuthGuard() {
+            const auth  = localStorage.getItem('croudify_auth');
+            const orgId = localStorage.getItem('croudify_org_id');
+
+            if (!auth) {
+                // No session at all → keep auth overlay, show body
+                document.body.style.visibility = 'visible';
+                document.getElementById('authOverlay').style.display = 'flex';
+                return;
+            }
+
+            // Has auth → hide overlay, show page
+            document.body.style.visibility = 'visible';
             document.getElementById('authOverlay').style.display = 'none';
+
+            // Check balance if we have an org_id
+            if (orgId) await _checkBalanceGate();
+        })();
+
+        // ── Balance gate ──────────────────────────────────────────────
+        async function _checkBalanceGate() {
+            const orgId = localStorage.getItem('croudify_org_id');
+            if (!orgId) return; // New user, no org yet — wallet will be created
+            const base = localStorage.getItem('croudify_backend_url') || 'http://localhost:8000';
+            try {
+                const r = await fetch(`${base}/wallet/${orgId}`);
+                if (r.ok) {
+                    const d = await r.json();
+                    const balance = d.balance ?? 0;
+                    const gate = document.getElementById('noBalanceGate');
+                    const balEl = document.getElementById('nbgBalance');
+                    if (gate && balance === 0) {
+                        if (balEl) balEl.textContent = '0';
+                        gate.classList.remove('hidden');
+                    } else if (gate) {
+                        gate.classList.add('hidden');
+                    }
+                }
+            } catch(e) { /* backend offline — let them in, connect will fail anyway */ }
+        }
+
+        // Called from no-balance gate "skip" link
+        function nbgSkip() {
+            document.getElementById('noBalanceGate').classList.add('hidden');
         }
     </script>
+
+<!-- ══ NO-BALANCE GATE OVERLAY ════════════════════════════════════ -->
+<div id="noBalanceGate" class="hidden">
+    <div class="nbg-icon">🚫</div>
+    <div class="nbg-title">INSUFFICIENT CREDITS</div>
+    <div class="nbg-bal" id="nbgBalance">0</div>
+    <div class="nbg-sub">
+        Your authority wallet has <strong>0 Croudify Credits</strong>.<br>
+        You must top up your wallet before starting the AI monitoring service.
+    </div>
+    <a href="landing.html#pricing" class="nbg-recharge-btn">⚡ RECHARGE WALLET</a>
+    <a href="billing.html" class="nbg-recharge-btn" style="background:transparent;border-color:rgba(0,183,255,0.3);font-size:0.72rem;">VIEW BILLING</a>
+    <div class="nbg-skip" onclick="nbgSkip()">Skip for now (read-only mode)</div>
+</div>
 
 <!-- ══ COMMAND CENTER HEADER ══════════════════════════════════════════ -->
 <header class="cmd-hdr">

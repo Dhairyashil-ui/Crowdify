@@ -1,591 +1,864 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Croudify — Live Intelligence Dashboard</title>
-    <meta name="description" content="Croudify operator dashboard — real-time crowd behaviour monitoring and risk prediction.">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['"Roboto Mono"', 'monospace'] },
-                    colors: {
-                        google: {
-                            bg: '#f8f9fa', card: '#ffffff', border: '#dadce0',
-                            textPrimary: '#202124', textSecondary: '#5f6368',
-                            blue: '#1a73e8', red: '#ea4335', yellow: '#fbbc04', green: '#34a853'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Croudify — AI Crowd Intelligence Platform</title>
+    <meta name="description" content="Croudify — Real-time AI-powered crowd safety management. Monitor density, predict risks, and protect lives. Pay-per-use credits, no subscription required.">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            background: #0f1117;
-            background-image:
-                radial-gradient(ellipse at 0% 0%, rgba(26, 115, 232, 0.07) 0px, transparent 55%),
-                radial-gradient(ellipse at 100% 100%, rgba(234, 67, 53, 0.05) 0px, transparent 50%);
-        }
+    /* ── RESET & BASE ────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --bg:          #060a0f;
+        --surface:     #08101e;
+        --surface-2:   #0c1827;
+        --border:      rgba(0,183,255,0.10);
+        --border-mid:  rgba(0,183,255,0.22);
+        --text:        #b8d4ea;
+        --text-dim:    #3f6880;
+        --text-bright: #e8f4ff;
+        --critical:    #ff3b3b;
+        --watch:       #ffaa00;
+        --safe:        #00e676;
+        --accent:      #00b7ff;
+        --accent-2:    #a78bfa;
+        --grad-a:      #00b7ff;
+        --grad-b:      #7c3aed;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+        background-color: var(--bg);
+        background-image:
+            linear-gradient(rgba(0,183,255,0.018) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,183,255,0.018) 1px, transparent 1px);
+        background-size: 48px 48px;
+        color: var(--text);
+        font-family: 'Rajdhani', sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
 
-        .panel {
-            background: rgba(22, 27, 38, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 1rem;
-        }
+    /* ── SCROLLBAR ────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,183,255,0.2); border-radius: 2px; }
 
-        .panel-header {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            padding: 0.6rem 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    /* ── NAV ──────────────────────────────────────────────────────── */
+    .nav {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+        height: 64px;
+        background: rgba(6,10,15,0.92);
+        border-bottom: 1px solid var(--border);
+        backdrop-filter: blur(20px);
+        display: flex; align-items: center;
+        padding: 0 2rem; gap: 2rem;
+    }
+    .brand { display: flex; align-items: center; gap: 0.65rem; text-decoration: none; }
+    .brand-icon {
+        width: 38px; height: 38px; border-radius: 9px;
+        border: 1.5px solid var(--accent);
+        background: rgba(0,183,255,0.08);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 18px rgba(0,183,255,0.18);
+    }
+    .brand-icon svg { width: 20px; height: 20px; fill: var(--accent); }
+    .brand-text { display: flex; flex-direction: column; }
+    .brand-sub  { font-size: 0.48rem; font-weight: 700; letter-spacing: 0.3em; color: var(--accent); line-height: 1; }
+    .brand-name { font-family: 'Orbitron', sans-serif; font-size: 0.92rem; font-weight: 900; color: var(--text-bright); letter-spacing: 0.1em; line-height: 1.3; }
+    .nav-links { display: flex; gap: 0.25rem; margin-left: auto; }
+    .nav-link {
+        padding: 0.3rem 0.9rem; border-radius: 6px;
+        font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
+        text-decoration: none; color: var(--text-dim); transition: all 0.18s;
+    }
+    .nav-link:hover { color: var(--text-bright); background: rgba(0,183,255,0.06); }
+    .nav-link.active { color: var(--accent); background: rgba(0,183,255,0.10); }
+    .nav-cta {
+        padding: 0.42rem 1.1rem; border-radius: 6px;
+        font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em;
+        text-decoration: none; color: #000;
+        background: linear-gradient(135deg, #00b7ff, #0077cc);
+        border: none; cursor: pointer; transition: all 0.2s;
+        box-shadow: 0 0 16px rgba(0,183,255,0.25);
+    }
+    .nav-cta:hover { box-shadow: 0 0 28px rgba(0,183,255,0.45); transform: translateY(-1px); }
 
-        .panel-header h3 {
-            font-size: 0.65rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: #9ca3af;
-        }
+    /* ── HERO ─────────────────────────────────────────────────────── */
+    .hero {
+        min-height: 100vh; padding: 120px 2rem 5rem;
+        display: flex; align-items: center; justify-content: center;
+        text-align: center; position: relative; overflow: hidden;
+    }
+    .hero-glow {
+        position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+        width: 700px; height: 700px; border-radius: 50%;
+        background: radial-gradient(ellipse at center,
+            rgba(0,183,255,0.07) 0%, transparent 68%);
+        pointer-events: none;
+    }
+    .hero-ring {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 560px; height: 560px; border-radius: 50%;
+        border: 1px solid rgba(0,183,255,0.06);
+        animation: spin 28s linear infinite;
+    }
+    .hero-ring-2 {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 760px; height: 760px; border-radius: 50%;
+        border: 1px dashed rgba(0,183,255,0.04);
+        animation: spin 44s linear infinite reverse;
+    }
+    @keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+    .hero-content { position: relative; z-index: 2; max-width: 820px; }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.32rem 0.9rem; border-radius: 20px;
+        background: rgba(0,183,255,0.07); border: 1px solid rgba(0,183,255,0.22);
+        font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; color: var(--accent);
+        margin-bottom: 1.8rem;
+    }
+    .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 8px var(--safe); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .hero-title {
+        font-family: 'Orbitron', sans-serif; font-size: clamp(2.2rem, 6vw, 4.2rem);
+        font-weight: 900; line-height: 1.1; letter-spacing: 0.03em;
+        color: var(--text-bright); margin-bottom: 1.2rem;
+    }
+    .hero-title .grad {
+        background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-sub {
+        font-size: clamp(1rem, 2.5vw, 1.22rem); color: var(--text);
+        max-width: 600px; margin: 0 auto 2.5rem; line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+        padding: 0.9rem 2.2rem; border-radius: 8px;
+        font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 700;
+        letter-spacing: 0.12em; color: #000; cursor: pointer; border: none;
+        background: linear-gradient(135deg, #00b7ff, #0077cc);
+        box-shadow: 0 0 24px rgba(0,183,255,0.35);
+        text-decoration: none; transition: all 0.22s;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { box-shadow: 0 0 40px rgba(0,183,255,0.55); transform: translateY(-2px); }
+    .btn-outline {
+        padding: 0.9rem 2.2rem; border-radius: 8px;
+        font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 700;
+        letter-spacing: 0.12em; color: var(--accent); cursor: pointer;
+        background: transparent; border: 1.5px solid rgba(0,183,255,0.38);
+        text-decoration: none; transition: all 0.22s;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-outline:hover { background: rgba(0,183,255,0.07); border-color: var(--accent); transform: translateY(-2px); }
 
-        .panel-header span.dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #1a73e8;
-        }
+    /* ── STATS BAR ────────────────────────────────────────────────── */
+    .stats-bar {
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 0;
+        border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+        background: rgba(8,16,30,0.7); backdrop-filter: blur(12px);
+    }
+    .stat-item {
+        flex: 1; min-width: 160px; padding: 1.5rem 2rem;
+        text-align: center; border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-val { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: var(--text-bright); line-height: 1; }
+    .stat-val .hi { color: var(--accent); }
+    .stat-lbl { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.18em; color: var(--text-dim); margin-top: 0.35rem; }
 
-        /* Signal bar styling */
-        .signal-bar-track {
-            flex: 1;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.07);
-            border-radius: 3px;
-            overflow: hidden;
-        }
+    /* ── SECTION WRAPPER ──────────────────────────────────────────── */
+    .section { padding: 5rem 2rem; max-width: 1160px; margin: 0 auto; }
+    .section-tag {
+        font-size: 0.62rem; font-weight: 700; letter-spacing: 0.26em;
+        color: var(--accent); margin-bottom: 0.7rem;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-tag::before { content:''; display:inline-block; width:24px; height:1.5px; background:var(--accent); }
+    .section-title {
+        font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 4vw, 2.4rem);
+        font-weight: 900; color: var(--text-bright); letter-spacing: 0.04em;
+        margin-bottom: 0.7rem; line-height: 1.15;
+    }
+    .section-sub { font-size: 1rem; color: var(--text); max-width: 560px; line-height: 1.65; margin-bottom: 3rem; }
 
-        .signal-bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s;
-        }
+    /* ── HOW IT WORKS ─────────────────────────────────────────────── */
+    #how { background: linear-gradient(180deg, transparent, rgba(0,183,255,0.02), transparent); }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+    .step-card {
+        background: var(--surface); border: 1px solid var(--border-mid);
+        border-radius: 16px; padding: 2rem 1.75rem; position: relative;
+        transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .step-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,183,255,0.08); }
+    .step-num {
+        font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: 900;
+        color: rgba(0,183,255,0.08); position: absolute; top: 1rem; right: 1.25rem;
+        line-height: 1;
+    }
+    .step-icon {
+        width: 48px; height: 48px; border-radius: 12px;
+        background: rgba(0,183,255,0.08); border: 1px solid rgba(0,183,255,0.2);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 1.2rem; font-size: 1.4rem;
+    }
+    .step-title { font-size: 1.08rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.5rem; }
+    .step-desc  { font-size: 0.88rem; color: var(--text); line-height: 1.6; }
+    .step-connector {
+        display: flex; align-items: center; justify-content: center;
+        color: var(--text-dim); font-size: 1.5rem; padding-top: 2rem;
+    }
 
-        /* Pulse animations */
-        .pulse-red-border { animation: pulse-red-border 1.6s ease-in-out infinite; }
-        @keyframes pulse-red-border {
-            0%, 100% { box-shadow: 0 0 0 3px #ea4335, 0 0 25px rgba(234,67,53,0.4); }
-            50%       { box-shadow: 0 0 0 5px #ea4335, 0 0 40px rgba(234,67,53,0.6); }
-        }
+    /* ── FEATURES ─────────────────────────────────────────────────── */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .feat-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 14px; padding: 1.5rem 1.4rem;
+        transition: all 0.22s; cursor: default;
+    }
+    .feat-card:hover {
+        border-color: var(--border-mid);
+        background: rgba(8,16,30,0.95);
+        box-shadow: 0 8px 32px rgba(0,183,255,0.06);
+        transform: translateY(-3px);
+    }
+    .feat-icon { font-size: 1.6rem; margin-bottom: 0.75rem; }
+    .feat-name { font-size: 0.95rem; font-weight: 700; color: var(--text-bright); margin-bottom: 0.35rem; }
+    .feat-desc { font-size: 0.82rem; color: var(--text-dim); line-height: 1.55; }
+    .feat-cost {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        margin-top: 0.8rem; padding: 0.2rem 0.6rem;
+        background: rgba(0,183,255,0.06); border: 1px solid rgba(0,183,255,0.18);
+        border-radius: 4px;
+        font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; color: var(--accent);
+    }
 
-        .pulse-dot { animation: pulseDot 1.8s ease-in-out infinite; }
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.5; transform: scale(0.85); }
-        }
+    /* ── PRICING ──────────────────────────────────────────────────── */
+    #pricing { position: relative; }
+    .pricing-intro {
+        display: flex; align-items: center; gap: 1rem;
+        padding: 1rem 1.5rem; margin-bottom: 2rem;
+        background: rgba(0,183,255,0.04); border: 1px solid var(--border-mid);
+        border-radius: 10px;
+    }
+    .pricing-intro-icon { font-size: 1.8rem; }
+    .pricing-intro-text { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
+    .pricing-intro-text strong { color: var(--accent); }
 
-        @keyframes speakPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.6; transform: scale(0.95); }
-        }
-        .speak-pulse { animation: speakPulse 0.8s ease-in-out infinite; }
+    .pricing-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    @media(max-width: 720px) { .pricing-layout { grid-template-columns: 1fr; } }
 
-        /* Text color helpers */
-        .text-safe     { color: #34a853; }
-        .text-warning  { color: #fbbc04; }
-        .text-critical { color: #ea4335; }
-        .text-dim      { color: #6b7280; }
-        .text-bright   { color: #e5e7eb; }
+    /* Pricing table */
+    .price-table { background: var(--surface); border: 1px solid var(--border-mid); border-radius: 16px; overflow: hidden; }
+    .price-table-hdr {
+        padding: 0.75rem 1.25rem; background: rgba(0,183,255,0.04);
+        border-bottom: 1px solid var(--border);
+        font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; color: var(--accent);
+    }
+    .price-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.7rem 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+        transition: background 0.15s;
+    }
+    .price-row:last-child { border-bottom: none; }
+    .price-row:hover { background: rgba(0,183,255,0.03); }
+    .price-feat { display: flex; align-items: center; gap: 0.6rem; font-size: 0.88rem; color: var(--text); }
+    .price-feat-icon { font-size: 0.95rem; }
+    .price-credit {
+        font-family: 'Share Tech Mono', monospace; font-size: 0.82rem;
+        font-weight: 700; color: var(--accent);
+        display: flex; align-items: center; gap: 0.3rem;
+    }
+    .credit-bar { width: 40px; height: 4px; background: rgba(0,183,255,0.1); border-radius: 2px; overflow: hidden; }
+    .credit-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #0077cc); border-radius: 2px; }
 
-        /* Input styling */
-        input.dark-input {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #e5e7eb;
-            border-radius: 0.6rem;
-            padding: 0.5rem 0.9rem;
-            font-size: 0.8rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input.dark-input:focus { border-color: #1a73e8; }
-        input.dark-input::placeholder { color: #6b7280; }
+    /* Pack cards */
+    .packs { display: flex; flex-direction: column; gap: 1rem; }
+    .pack-card {
+        background: var(--surface); border: 1.5px solid var(--border-mid);
+        border-radius: 14px; padding: 1.25rem 1.5rem;
+        cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .pack-card:hover { border-color: var(--accent); box-shadow: 0 0 28px rgba(0,183,255,0.12); transform: translateY(-2px); }
+    .pack-card.selected { border-color: var(--accent); background: rgba(0,183,255,0.06); box-shadow: 0 0 32px rgba(0,183,255,0.15); }
+    .pack-card.popular::before {
+        content: 'MOST POPULAR';
+        position: absolute; top: 0; right: 1rem;
+        font-size: 0.52rem; font-weight: 700; letter-spacing: 0.18em;
+        color: #000; background: var(--accent);
+        padding: 0.18rem 0.6rem; border-radius: 0 0 4px 4px;
+    }
+    .pack-row { display: flex; align-items: center; justify-content: space-between; }
+    .pack-inr { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; color: var(--text-bright); }
+    .pack-credits { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: var(--safe); }
+    .pack-name { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; color: var(--text-dim); margin-top: 0.25rem; }
+    .pack-peruse { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.35rem; }
 
-        /* Risk number glow */
-        .risk-num-safe     { color: #34a853; text-shadow: 0 0 30px rgba(52,168,83,0.4); }
-        .risk-num-warning  { color: #fbbc04; text-shadow: 0 0 30px rgba(251,188,4,0.4); }
-        .risk-num-critical { color: #ea4335; text-shadow: 0 0 30px rgba(234,67,53,0.5); }
+    /* Custom amount */
+    .custom-amt-wrap { position: relative; margin-top: 0.5rem; }
+    .custom-amt-wrap .rupee { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--accent); font-weight: 700; font-size: 1rem; }
+    .custom-amt-input {
+        width: 100%; padding: 0.85rem 1rem 0.85rem 2.2rem;
+        background: rgba(0,0,0,0.35); border: 1.5px solid var(--border-mid);
+        border-radius: 10px; color: var(--text-bright);
+        font-family: 'Share Tech Mono', monospace; font-size: 1rem; outline: none;
+        transition: border-color 0.2s;
+    }
+    .custom-amt-input:focus { border-color: var(--accent); }
+    .custom-amt-input::placeholder { color: var(--text-dim); font-size: 0.85rem; }
 
-        /* Forecast value styling */
-        .forecast-value { font-family: 'Roboto Mono', monospace; }
+    /* Recharge CTA */
+    .recharge-cta-wrap { margin-top: 1.5rem; }
+    .recharge-main-btn {
+        width: 100%; padding: 1rem;
+        background: linear-gradient(135deg, rgba(0,183,255,0.2), rgba(0,183,255,0.08));
+        border: 2px solid var(--accent); border-radius: 10px;
+        font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 700;
+        letter-spacing: 0.14em; color: var(--text-bright); cursor: pointer;
+        transition: all 0.22s; box-shadow: 0 0 22px rgba(0,183,255,0.14);
+    }
+    .recharge-main-btn:hover:not(:disabled) { background: linear-gradient(135deg, rgba(0,183,255,0.32), rgba(0,183,255,0.14)); box-shadow: 0 0 40px rgba(0,183,255,0.32); transform: translateY(-1px); }
+    .recharge-main-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .recharge-note { font-size: 0.68rem; color: var(--text-dim); text-align: center; margin-top: 0.65rem; line-height: 1.5; }
+    .recharge-note a { color: var(--accent); text-decoration: none; }
 
-        /* Chart container */
-        #riskChartContainer { position: relative; height: 150px; }
+    /* Wallet status mini-bar */
+    .wallet-status-bar {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.65rem 1rem;
+        background: rgba(0,183,255,0.04); border: 1px solid var(--border);
+        border-radius: 8px; margin-bottom: 1rem;
+        font-size: 0.82rem; color: var(--text);
+    }
+    .wallet-status-bar.hidden { display: none; }
+    .wbal-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 7px var(--safe); flex-shrink: 0; }
+    .wbal-num { font-family: 'Share Tech Mono', monospace; font-size: 1rem; font-weight: 700; color: var(--accent); }
+    .wbal-login { font-size: 0.78rem; color: var(--text-dim); }
+    .wbal-login a { color: var(--accent); text-decoration: none; }
+
+    /* ── TOAST ────────────────────────────────────────────────────── */
+    .toast {
+        position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9000;
+        padding: 0.75rem 1.2rem;
+        background: rgba(6,13,24,0.97); border: 1px solid rgba(0,230,118,0.4);
+        border-radius: 8px; backdrop-filter: blur(12px);
+        font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.85rem;
+        color: var(--safe); letter-spacing: 0.06em;
+        display: flex; align-items: center; gap: 0.55rem;
+        box-shadow: 0 0 24px rgba(0,230,118,0.15);
+        animation: toast-in 0.3s cubic-bezier(0.34,1.3,0.64,1);
+        transition: opacity 0.4s;
+    }
+    .toast.err { border-color: rgba(255,59,59,0.4); color: var(--critical); box-shadow: 0 0 24px rgba(255,59,59,0.12); }
+    .toast.hidden { display: none; }
+    @keyframes toast-in { from{transform:translateY(18px);opacity:0} to{transform:none;opacity:1} }
+
+    /* ── FOOTER ───────────────────────────────────────────────────── */
+    .footer {
+        border-top: 1px solid var(--border);
+        padding: 2.5rem 2rem;
+        text-align: center; color: var(--text-dim);
+        font-size: 0.78rem; letter-spacing: 0.05em;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer-logo { font-family: 'Orbitron', sans-serif; font-size: 0.82rem; font-weight: 900; color: var(--text-bright); letter-spacing: 0.12em; margin-bottom: 0.5rem; }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────────── */
+    @media(max-width: 600px) {
+        .nav { padding: 0 1rem; gap: 0.75rem; }
+        .nav-link { display: none; }
+        .hero { padding: 100px 1.25rem 4rem; }
+        .section { padding: 3.5rem 1.25rem; }
+    }
     </style>
 </head>
+<body>
 
-<body class="min-h-screen p-3 md:p-5 font-sans text-gray-300">
-
-    <!-- ── AUTH OVERLAY ── -->
-    <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
-        <div id="authStep1" style="background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
-            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Croudify Login</div>
-            <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;">Developer access requires identity verification.</p>
-            <div id="g_id_onload"
-                 data-client_id="1022460608162-94dor169q04064eqglu41f4c0off90h7.apps.googleusercontent.com"
-                 data-context="signin"
-                 data-ux_mode="popup"
-                 data-callback="handleCredentialResponse"
-                 data-auto_prompt="false">
-            </div>
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="rectangular"
-                 data-theme="filled_blue"
-                 data-text="signin_with"
-                 data-size="large"
-                 data-logo_alignment="left"
-                 style="display:flex; justify-content:center;">
-            </div>
+<!-- ══ NAV ══════════════════════════════════════════════════════════ -->
+<nav class="nav">
+    <a href="landing.html" class="brand" aria-label="Croudify Home">
+        <div class="brand-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
         </div>
-        
-        <div id="authStep2" style="display:none; background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:left;max-width:400px;width:90%;">
-            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;text-align:center;">COMPLETE PROFILE</div>
-            <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;text-align:center;">Provide organization details to create your secure account.</p>
-            
-            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Organization Name</label>
-            <input type="text" id="authName" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
-            
-            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Department / Division</label>
-            <input type="text" id="authDept" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1rem; outline:none;">
-            
-            <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Contact Number</label>
-            <input type="text" id="authPhone" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1.5rem; outline:none;">
-            
-            <button onclick="submitAuthProfile()" style="width:100%; background:#1a73e8; color:#fff; font-weight:600; padding:0.8rem; border-radius:0.5rem; border:none; cursor:pointer;">ENTER DASHBOARD</button>
+        <div class="brand-text">
+            <span class="brand-sub">CROUDIFY</span>
+            <span class="brand-name">PLATFORM</span>
+        </div>
+    </a>
+    <nav class="nav-links">
+        <a href="landing.html" class="nav-link active">Home</a>
+        <a href="authority.html" class="nav-link">Dashboard</a>
+        <a href="billing.html" class="nav-link">Billing</a>
+        <a href="index.html" class="nav-link">Developer</a>
+    </nav>
+    <a href="authority.html" class="nav-cta" id="navLoginBtn">⚡ LAUNCH DASHBOARD</a>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section class="hero" id="home">
+    <div class="hero-glow"></div>
+    <div class="hero-ring"></div>
+    <div class="hero-ring-2"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <div class="hero-badge-dot"></div>
+            AI-POWERED · REAL-TIME · PAY-PER-USE
+        </div>
+        <h1 class="hero-title">
+            Crowd Intelligence<br>
+            <span class="grad">at the Speed of Safety</span>
+        </h1>
+        <p class="hero-sub">
+            Croudify deploys real-time AI computer vision to monitor crowd density, predict stampede risks, and deliver actionable alerts — protecting lives at scale. No subscription. Pay only for what you use.
+        </p>
+        <div class="hero-actions">
+            <a href="authority.html" class="btn-primary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                ENTER COMMAND CENTER
+            </a>
+            <a href="#pricing" class="btn-outline">
+                VIEW PRICING
+            </a>
         </div>
     </div>
-    <script>
-        let tempEmail = "";
-        let tempName = "";
-        
-        function decodeJwtResponse(token) {
-            let base64Url = token.split('.')[1];
-            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        }
+</section>
 
-        function handleCredentialResponse(response) {
-            if (response.credential) {
-                const payload = decodeJwtResponse(response.credential);
-                tempEmail = payload.email;
-                tempName = payload.name;
-                
-                document.getElementById('authStep1').style.display = 'none';
-                document.getElementById('authStep2').style.display = 'block';
-                document.getElementById('authName').value = tempName + " Org";
-            }
-        }
-        
-        async function submitAuthProfile() {
-            const name = document.getElementById('authName').value;
-            const dept = document.getElementById('authDept').value;
-            const phone = document.getElementById('authPhone').value;
-            
-            try {
-                // Try sending to the backend to store the authority details
-                const base = document.getElementById('backendUrl') ? document.getElementById('backendUrl').value.trim().replace(/\/$/, '') : 'http://localhost:8000';
-                const resp = await fetch(`${base}/org/create`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name: name, email: tempEmail, department: dept, phone: phone })
-                });
-                if(resp.ok) {
-                    const data = await resp.json();
-                    if(data.organisation && data.organisation.id) {
-                        localStorage.setItem('croudify_org_id', data.organisation.id);
-                        if (document.getElementById('orgCodeInput')) {
-                            document.getElementById('orgCodeInput').value = data.organisation.id;
-                        }
-                    }
-                }
-            } catch (e) {
-                console.log("Could not sync with backend, proceeding anyway");
-            }
-            
-            localStorage.setItem('croudify_auth', 'true');
-            localStorage.setItem('croudify_email', tempEmail);
-            document.getElementById('authOverlay').style.display = 'none';
-        }
-        
-        if (localStorage.getItem('croudify_auth')) {
-            document.getElementById('authOverlay').style.display = 'none';
-        }
-    </script>
+<!-- ══ STATS ═══════════════════════════════════════════════════════ -->
+<div class="stats-bar">
+    <div class="stat-item">
+        <div class="stat-val"><span class="hi">&lt;</span>200ms<span class="hi">&gt;</span></div>
+        <div class="stat-lbl">INFERENCE LATENCY</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-val">10</div>
+        <div class="stat-lbl">AI FEATURE MODULES</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-val"><span class="hi">1:1</span></div>
+        <div class="stat-lbl">INR TO CREDIT RATIO</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-val">∞</div>
+        <div class="stat-lbl">CAMERAS SUPPORTED</div>
+    </div>
+</div>
 
-    <div class="max-w-[1700px] w-full mx-auto flex flex-col gap-4">
+<!-- ══ HOW IT WORKS ═════════════════════════════════════════════════ -->
+<div id="how">
+<div class="section">
+    <div class="section-tag">HOW IT WORKS</div>
+    <h2 class="section-title">From Camera Feed to<br>Life-Saving Alerts</h2>
+    <p class="section-sub">Three simple steps connect your cameras to an AI-powered safety nerve centre.</p>
+    <div class="steps">
+        <div class="step-card">
+            <div class="step-num">01</div>
+            <div class="step-icon">📷</div>
+            <div class="step-title">Connect Your Camera</div>
+            <div class="step-desc">Stream any IP camera or Android device directly to the Croudify backend. No proprietary hardware needed — works with existing CCTV infrastructure.</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">02</div>
+            <div class="step-icon">🧠</div>
+            <div class="step-title">AI Analyses Crowds</div>
+            <div class="step-desc">YOLOv8 + ByteTrack detects every person in real-time. 10 intelligence modules compute density, compression, flow vectors, risk score, and predicted escalation time.</div>
+        </div>
+        <div class="step-card">
+            <div class="step-num">03</div>
+            <div class="step-icon">🚨</div>
+            <div class="step-title">Command & Respond</div>
+            <div class="step-desc">Authority dashboard shows live zone heatmaps, incident alerts with AI-recommended actions, and escalation timers. Credits are deducted per intelligence unit processed.</div>
+        </div>
+    </div>
+</div>
+</div>
 
-        <!-- ── Top Bar ─────────────────────────────────────────────────────── -->
-        <header class="panel flex flex-wrap justify-between items-center px-5 py-3 gap-4">
-            <div class="flex items-center gap-5">
-                <div>
-                    <p class="text-[9px] font-bold tracking-[0.2em] uppercase text-blue-400 mb-0.5">CROUDIFY — OPERATOR VIEW</p>
-                    <h1 class="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                        </svg>
-                        LIVE INTELLIGENCE
-                    </h1>
+<!-- ══ FEATURES ═════════════════════════════════════════════════════ -->
+<section class="section" id="features">
+    <div class="section-tag">FEATURE MODULES</div>
+    <h2 class="section-title">10 AI Intelligence Modules</h2>
+    <p class="section-sub">Each module is individually priced. Enable only what you need — you pay only for what runs.</p>
+    <div class="features-grid">
+        <div class="feat-card">
+            <div class="feat-icon">👤</div>
+            <div class="feat-name">Person Detection</div>
+            <div class="feat-desc">YOLOv8-powered real-time detection and tracking of every individual in the camera frame using ByteTrack.</div>
+            <div class="feat-cost">1 credit / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🌡️</div>
+            <div class="feat-name">Density Analysis</div>
+            <div class="feat-desc">Compute people-per-area across custom zones. Classify zones as LOW / MEDIUM / HIGH density with historical trending.</div>
+            <div class="feat-cost">1 credit / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🏃</div>
+            <div class="feat-name">Movement Analysis</div>
+            <div class="feat-desc">Track movement intensity per zone. Detect sudden surges or stagnation that precede dangerous crowd conditions.</div>
+            <div class="feat-cost">1 credit / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">⚡</div>
+            <div class="feat-name">Speed Analysis</div>
+            <div class="feat-desc">Measure average and peak crowd velocity in px/s. Temporal memory tracks acceleration over a rolling 5-second window.</div>
+            <div class="feat-cost">1 credit / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🧭</div>
+            <div class="feat-name">Direction Analysis</div>
+            <div class="feat-desc">Compute circular mean heading per zone and directional consistency (R-value). Detects converging or chaotic motion patterns.</div>
+            <div class="feat-cost">1 credit / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🌊</div>
+            <div class="feat-name">Optical Flow Analysis</div>
+            <div class="feat-desc">Farneback dense optical flow measures global motion magnitude and convergence zones — uncovering macro movement invisible to per-person tracking.</div>
+            <div class="feat-cost">2 credits / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🗜️</div>
+            <div class="feat-name">Compression Detection</div>
+            <div class="feat-desc">Nearest-neighbour distance analysis identifies when people are being pushed together — a key early indicator of stampede formation.</div>
+            <div class="feat-cost">2 credits / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🚪</div>
+            <div class="feat-name">Exit Blockage</div>
+            <div class="feat-desc">Monitor occupancy at all exit zones. Triggers alerts when exits approach capacity, preventing bottleneck formation in emergencies.</div>
+            <div class="feat-cost">2 credits / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🎭</div>
+            <div class="feat-name">Behaviour Analysis</div>
+            <div class="feat-desc">LLM-powered (Groq/LLaMA 3) natural language scene analysis. Interprets crowd signals and generates human-readable cause explanations.</div>
+            <div class="feat-cost">3 credits / unit</div>
+        </div>
+        <div class="feat-card">
+            <div class="feat-icon">🔮</div>
+            <div class="feat-name">Risk Prediction</div>
+            <div class="feat-desc">12-feature weighted model with EMA smoothing and linear trend regression. Outputs a 0–100 risk score with SAFE / WARNING / CRITICAL classification.</div>
+            <div class="feat-cost">3 credits / unit</div>
+        </div>
+    </div>
+</section>
+
+<!-- ══ PRICING ══════════════════════════════════════════════════════ -->
+<section class="section" id="pricing">
+    <div class="section-tag">PRICING</div>
+    <h2 class="section-title">Simple Credit-Based Pricing</h2>
+    <p class="section-sub">No subscriptions. No monthly fees. Buy credits, use intelligence. <strong style="color:var(--accent)">₹1 = 1 Croudify Credit.</strong></p>
+
+    <div class="pricing-intro">
+        <div class="pricing-intro-icon">💡</div>
+        <div class="pricing-intro-text">
+            Credits are consumed per <strong>intelligence unit</strong> (one analysis of one frame's worth of data).
+            With all 10 modules enabled, each unit costs <strong>17 credits</strong>.
+            Running the system at 1 analysis/second with all features costs approximately <strong>₹1.02/minute</strong>.
+        </div>
+    </div>
+
+    <div class="pricing-layout">
+        <!-- Feature pricing table -->
+        <div>
+            <div class="price-table">
+                <div class="price-table-hdr">FEATURE CREDIT COSTS (PER INTELLIGENCE UNIT)</div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">👤</span> Person Detection</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:33%"></div></div> 1 cr</span>
                 </div>
-                <div class="hidden md:flex flex-col gap-1 border-l border-white/10 pl-5 ml-1">
-                    <div class="flex items-center gap-2">
-                        <span id="devSystemDot" class="w-2 h-2 rounded-full bg-gray-500"></span>
-                        <span id="devSystemStatus" class="text-[10px] font-bold text-gray-500 tracking-wide">SYSTEM OFFLINE</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-[10px] text-gray-600 font-mono">
-                        <span>Cam: <span id="devCamId" class="text-gray-500">—</span></span>
-                        <span class="opacity-40">|</span>
-                        <span>Location: <span id="devLocation" class="text-gray-500">—</span></span>
-                        <span class="opacity-40">|</span>
-                        <span>Session: <span id="currentSessionCode" class="text-blue-400 font-bold">#---</span></span>
-                    </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🌡️</span> Density Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:33%"></div></div> 1 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🏃</span> Movement Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:33%"></div></div> 1 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">⚡</span> Speed Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:33%"></div></div> 1 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🧭</span> Direction Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:33%"></div></div> 1 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🌊</span> Flow Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:66%"></div></div> 2 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🗜️</span> Compression</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:66%"></div></div> 2 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🚪</span> Exit Blockage</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:66%"></div></div> 2 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🎭</span> Behaviour Analysis</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:100%"></div></div> 3 cr</span>
+                </div>
+                <div class="price-row">
+                    <span class="price-feat"><span class="price-feat-icon">🔮</span> Risk Prediction</span>
+                    <span class="price-credit"><div class="credit-bar"><div class="credit-fill" style="width:100%"></div></div> 3 cr</span>
                 </div>
             </div>
+        </div>
 
-            <div class="flex flex-wrap items-center gap-2">
-                <input id="serverUrlInput" type="text" placeholder="Backend URL or tunnel host"
-                    class="dark-input w-56" />
-                <input id="sessionCodeInput" type="text" placeholder="6-Char Code" maxlength="6"
-                    class="dark-input w-28 uppercase font-mono" />
-                <a href="authority.html"
-                    class="px-4 py-2 rounded-lg border border-blue-700/40 bg-blue-900/20 text-blue-300 text-xs font-bold tracking-wide transition-all hover:bg-blue-800/30 flex items-center gap-1.5"
-                    title="Open Authority Command Center">
-                    ⚑ COMMAND CENTER
-                </a>
-                <button onclick="connectFromUI()"
-                    class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold tracking-wide transition-all flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    Connect
-                </button>
-                <div id="connectionStatus" class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs font-medium">
-                    <div id="statusDot" class="w-2 h-2 rounded-full bg-gray-500"></div>
-                    <span id="statusText" class="text-gray-400">Disconnected</span>
-                </div>
+        <!-- Recharge packs + custom amount -->
+        <div>
+            <!-- Wallet status (shown when logged in) -->
+            <div class="wallet-status-bar hidden" id="walletStatusBar">
+                <div class="wbal-dot"></div>
+                <span>Wallet Balance:</span>
+                <span class="wbal-num" id="walletBalDisplay">—</span>
+                <span style="color:var(--text-dim);font-size:0.72rem;">CREDITS</span>
             </div>
-        </header>
+            <div class="wallet-status-bar" id="walletLoginPrompt" style="display:none;">
+                <span class="wbal-login">
+                    <a href="authority.html">Sign in</a> to recharge your authority wallet
+                </span>
+            </div>
 
-        <!-- ── Main Grid ───────────────────────────────────────────────────── -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-
-            <!-- ── Left: Video + Timeline ──────────────────────────────────── -->
-            <div class="lg:col-span-3 flex flex-col gap-4">
-
-                <!-- Live Feed -->
-                <div class="panel overflow-hidden flex flex-col">
-                    <div id="videoContainer"
-                        class="relative w-full bg-black flex items-center justify-center overflow-hidden"
-                        style="min-height:55vh; transition: box-shadow 0.5s;">
-                        <img id="videoStream"
-                            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                            class="absolute inset-0 w-full h-full object-contain hidden" alt="Live Feed">
-                        <img id="heatmapStream"
-                            class="absolute inset-0 w-full h-full object-contain hidden opacity-55 mix-blend-screen" alt="Heatmap">
-                        <div id="noSignal"
-                            class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 z-10 bg-black">
-                            <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                    d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243-4.243a5 5 0 000 7.072m0 0L5 21m0 0l2.829-2.829M8.464 5.636a9 9 0 000 12.728"/>
-                            </svg>
-                            <p class="text-xs tracking-widest uppercase">Waiting for Camera Source</p>
-                        </div>
-                        <div id="reconnectingOverlay"
-                            class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-20 opacity-0 pointer-events-none transition-opacity duration-300">
-                            <div class="animate-spin rounded-full h-8 w-8 border-4 border-white/20 border-t-white mb-2"></div>
-                            <p class="text-sm font-bold">Network Lost – Reconnecting</p>
-                        </div>
-                    </div>
-
-                    <!-- Under-feed bar -->
-                    <div class="flex items-center justify-between px-4 py-2 bg-black/60 border-t border-white/5 font-mono text-xs">
-                        <div class="flex items-center gap-4 text-gray-400">
-                            <span class="flex items-center gap-1.5 text-red-500 font-bold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot"></span>LIVE
-                            </span>
-                            <span class="opacity-30">|</span>
-                            <span><span id="fpsDisplay">--</span> FPS</span>
-                            <span class="opacity-30">|</span>
-                            <span id="latencyCalc">-- ms</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-300 font-bold">
-                            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                            </svg>
-                            <span id="peopleCountBar">0</span> <span class="font-normal text-gray-500">people</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Risk Timeline -->
-                <div class="panel overflow-hidden">
-                    <div class="panel-header">
-                        <span class="dot bg-purple-500" style="background:#a855f7"></span>
-                        <h3>Risk Timeline</h3>
-                        <span class="ml-auto text-[9px] text-gray-600 font-mono">— historical  ╌╌ forecast</span>
-                    </div>
-                    <div class="p-4">
-                        <div id="riskChartContainer">
-                            <canvas id="riskChart"></canvas>
-                        </div>
-                        <!-- Timeline forecast summary -->
-                        <div class="grid grid-cols-3 gap-3 mt-3">
-                            <div class="bg-white/4 rounded-lg p-3 text-center border border-white/5">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1 font-mono">NOW</p>
-                                <p class="text-xl font-bold font-mono text-white" id="timelineNow">--</p>
-                            </div>
-                            <div class="bg-white/4 rounded-lg p-3 text-center border border-white/5">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1 font-mono">+30 sec</p>
-                                <p class="text-xl font-bold font-mono" id="timeline30s">--</p>
-                            </div>
-                            <div class="bg-white/4 rounded-lg p-3 text-center border border-white/5">
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1 font-mono">+60 sec</p>
-                                <p class="text-xl font-bold font-mono" id="timeline60s">--</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Alert box -->
-                <div id="alertBox" class="panel p-4 border-l-4 border-white/10 opacity-60 transition-all duration-300">
-                    <div class="flex items-start gap-3">
-                        <div id="alertIcon" class="p-2 rounded-lg bg-white/5 text-gray-400 border border-white/10">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        </div>
+            <div class="packs">
+                <div class="pack-card" id="pack100" onclick="selectPack(100, this)">
+                    <div class="pack-row">
                         <div>
-                            <h3 id="alertTitle" class="text-sm font-bold text-gray-200">System Monitoring</h3>
-                            <p id="alertMessage" class="text-xs text-gray-500 mt-1 leading-relaxed">Waiting for camera source — connect to a session to begin monitoring.</p>
+                            <div class="pack-inr">₹100</div>
+                            <div class="pack-name">STARTER PACK</div>
                         </div>
+                        <div class="pack-credits">100 Credits</div>
                     </div>
+                    <div class="pack-peruse">~5.8 min of full AI monitoring</div>
+                </div>
+                <div class="pack-card popular" id="pack500" onclick="selectPack(500, this)">
+                    <div class="pack-row">
+                        <div>
+                            <div class="pack-inr">₹500</div>
+                            <div class="pack-name">STANDARD PACK</div>
+                        </div>
+                        <div class="pack-credits">500 Credits</div>
+                    </div>
+                    <div class="pack-peruse">~29 min of full AI monitoring</div>
+                </div>
+                <div class="pack-card" id="pack1000" onclick="selectPack(1000, this)">
+                    <div class="pack-row">
+                        <div>
+                            <div class="pack-inr">₹1000</div>
+                            <div class="pack-name">PREMIUM PACK</div>
+                        </div>
+                        <div class="pack-credits">1000 Credits</div>
+                    </div>
+                    <div class="pack-peruse">~58 min of full AI monitoring</div>
                 </div>
             </div>
 
-            <!-- ── Right: Risk + Intelligence ──────────────────────────────── -->
-            <div class="lg:col-span-1 flex flex-col gap-4">
-
-                <!-- Hero: Predicted Risk -->
-                <div id="riskCard" class="panel p-5 text-center transition-all duration-500">
-                    <p class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">CURRENT RISK</p>
-                    <div class="flex flex-col items-center justify-center mb-3">
-                        <span id="riskScoreHero" class="text-8xl font-extrabold leading-none font-mono risk-num-safe">0</span>
-                    </div>
-                    <div id="riskBadge" class="inline-flex justify-center items-center gap-2 px-5 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs font-bold tracking-widest text-gray-400 mb-4 transition-all duration-300">
-                        <div id="riskIndicatorDot" class="w-2 h-2 rounded-full bg-gray-500"></div>
-                        <span id="riskLabel">SAFE / IDLE</span>
-                    </div>
-                    <div class="text-xs font-medium text-gray-600 flex items-center justify-center gap-2 bg-white/4 px-4 py-2 rounded-lg border border-white/5">
-                        <span id="riskTrendIcon" class="font-bold text-gray-400">→</span>
-                        Risk trend: <span id="riskTrendLabel" class="font-bold text-gray-400">Stable</span>
-                    </div>
+            <!-- Custom amount input -->
+            <div style="margin-top:1rem;">
+                <label style="font-size:0.62rem;font-weight:700;letter-spacing:0.16em;color:var(--text-dim);display:block;margin-bottom:0.45rem;">CUSTOM AMOUNT (INR)</label>
+                <div class="custom-amt-wrap">
+                    <span class="rupee">₹</span>
+                    <input type="number" id="customAmt" min="1" class="custom-amt-input"
+                           placeholder="Enter any amount (min ₹1)"
+                           oninput="onCustomAmt()">
                 </div>
+            </div>
 
-                <!-- Behaviour Signals Matrix -->
-                <div class="panel overflow-hidden">
-                    <div class="panel-header">
-                        <span class="dot"></span>
-                        <h3>Behaviour Signals</h3>
-                    </div>
-                    <div class="p-3 flex flex-col gap-2.5">
-                        <!-- Each row: label, bar, value -->
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Density</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-blue-500" id="sig-density" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-density">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Movement</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-blue-400" id="sig-movement" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-movement">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Speed</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-cyan-400" id="sig-speed" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-speed">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Flow</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-teal-400" id="sig-flow" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-flow">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Compression</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-amber-400" id="sig-compression" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-compression">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Direction</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-orange-400" id="sig-direction" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-direction">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Exit blockage</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-red-400" id="sig-exit" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-exit">0%</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="w-28 text-gray-500 font-medium shrink-0">Abnormal</span>
-                            <div class="signal-bar-track"><div class="signal-bar-fill bg-rose-600" id="sig-abnormal" style="width:0%"></div></div>
-                            <span class="w-8 text-right font-mono text-gray-400 text-[10px]" id="sigv-abnormal">0%</span>
-                        </div>
-                    </div>
+            <div class="recharge-cta-wrap">
+                <button class="recharge-main-btn" id="rechargeBtn" onclick="initiateRecharge()" disabled>
+                    ⚡ RECHARGE WALLET
+                </button>
+                <div class="recharge-note" id="rechargeNote">
+                    Powered by Razorpay · Payments are secure &amp; encrypted<br>
+                    Test mode: card <strong>4111 1111 1111 1111</strong>, any CVV &amp; future expiry
                 </div>
-
-                <!-- Risk Prediction Window -->
-                <div class="panel overflow-hidden">
-                    <div class="panel-header" style="background: rgba(88,28,135,0.25)">
-                        <span class="dot" style="background:#a855f7"></span>
-                        <h3 style="color:#c4b5fd">Risk Prediction Engine</h3>
-                    </div>
-                    <div class="p-4 flex flex-col gap-3">
-                        <div class="text-center bg-purple-950/40 rounded-lg p-3 border border-purple-900/30">
-                            <span class="block text-[9px] uppercase font-bold text-purple-400 tracking-widest mb-1">Forecast Shift</span>
-                            <span class="text-sm font-bold text-purple-200 flex items-center justify-center gap-2">
-                                <span id="predFrom">SAFE</span>
-                                <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                                <span id="predTo">SAFE</span>
-                            </span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="bg-white/4 p-3 rounded-lg border border-white/5 text-center">
-                                <p class="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">Risk in 60s</p>
-                                <p class="text-xl font-bold font-mono text-white"><span id="predRiskPercent">0</span>%</p>
-                            </div>
-                            <div class="bg-white/4 p-3 rounded-lg border border-white/5 text-center">
-                                <p class="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">Confidence</p>
-                                <p class="text-xl font-bold font-mono text-white"><span id="predConfidence">--</span>%</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Risk Engine Analysis (behavioural signal interpretation — secondary to Risk Engine) -->
-                <div id="llmPanel" class="panel p-4 border-l-4 border-purple-700/60 hidden transition-all duration-300">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <div class="p-1.5 rounded bg-purple-900/50 border border-purple-700/30">
-                                <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <span class="text-[10px] font-bold text-purple-300 block leading-none">RISK ENGINE ANALYSIS</span>
-                                <span class="text-[9px] text-purple-500">Behavioural signal interpretation</span>
-                            </div>
-                            <span id="llmStatusBadge" class="hidden px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-900/50 border border-purple-700/30 text-purple-300"></span>
-                        </div>
-                        <span id="llmSpeakingBadge"
-                            class="hidden text-[10px] font-bold text-purple-300 bg-purple-900/50 border border-purple-700/30 px-2 py-0.5 rounded-full speak-pulse">
-                            🔊 Speaking
-                        </span>
-                    </div>
-                    <p id="llmText" class="text-xs text-gray-300 leading-relaxed">Waiting for Risk Engine explanation...</p>
-                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                        <span id="llmReason" class="text-[10px] text-purple-500"></span>
-                        <span id="llmTimestamp" class="text-[10px] text-gray-600 font-mono"></span>
-                    </div>
-                </div>
-                </div>
-
-                <!-- x402 Crowd Intelligence API Panel (Step 20) -->
-                <div class="panel overflow-hidden">
-                    <div class="panel-header" style="background:rgba(109,40,217,0.15);border-bottom:1px solid rgba(139,92,246,0.2)">
-                        <span class="dot" style="background:#8b5cf6"></span>
-                        <h3 style="color:#c4b5fd">Crowd Intelligence API</h3>
-                        <span class="ml-auto text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3)">x402</span>
-                    </div>
-                    <div class="p-4 flex flex-col gap-3">
-                        <!-- Endpoint info -->
-                        <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:0.75rem;">
-                            <p class="text-[9px] font-bold uppercase tracking-widest mb-1.5" style="color:#7c3aed">POST</p>
-                            <p class="font-mono text-xs text-gray-300">/api/v1/crowd/predict</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[10px]">
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Price</p>
-                                <p class="font-bold text-white font-mono">$0.001 <span class="font-normal text-gray-500">USDC</span></p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Network</p>
-                                <p class="font-bold text-white text-[10px]">Algorand TestNet</p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Payment</p>
-                                <p class="font-bold" style="color:#8b5cf6">x402</p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Protocol</p>
-                                <p class="font-bold text-white text-[10px]">HTTP 402</p>
-                            </div>
-                        </div>
-
-                        <!-- TRY API button -->
-                        <button id="x402TryBtn" onclick="x402DemoCall()"
-                            class="w-full py-2.5 rounded-lg font-bold text-xs tracking-widest transition-all"
-                            style="background:linear-gradient(135deg,#5b21b6,#3730a3);border:1px solid rgba(139,92,246,0.4);color:#e9d5ff;">
-                            ⚡ TRY API
-                        </button>
-
-                        <!-- Demo flow status -->
-                        <div id="x402Flow" class="hidden flex flex-col gap-1.5">
-                            <div id="x402Step1" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>POST /api/v1/crowd/predict</span>
-                            </div>
-                            <div id="x402Step2" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>402 Payment Required ← Server</span>
-                            </div>
-                            <div id="x402Step3" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>Signing Algorand payment…</span>
-                            </div>
-                            <div id="x402Step4" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>Retry with payment proof</span>
-                            </div>
-                            <div id="x402Step5" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>200 OK — Prediction response</span>
-                            </div>
-                        </div>
-
-                        <!-- Response preview -->
-                        <pre id="x402Response" class="hidden text-[9px] leading-relaxed overflow-auto rounded-lg p-3 font-mono"
-                            style="background:rgba(0,0,0,0.5);border:1px solid rgba(139,92,246,0.2);color:#a5b4fc;max-height:160px;"></pre>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
+</section>
 
-    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-    <script src="app.js"></script>
+<!-- ══ TOAST ════════════════════════════════════════════════════════ -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════════ -->
+<footer class="footer">
+    <div class="footer-logo">CROUDIFY</div>
+    <div>AI Crowd Intelligence Platform · Built for GDG Hackathon</div>
+    <div style="margin-top:0.5rem;">
+        <a href="authority.html">Dashboard</a> ·
+        <a href="billing.html">Billing</a> ·
+        <a href="index.html">Developer API</a>
+    </div>
+    <div style="margin-top:1rem;font-size:0.65rem;opacity:0.5;">
+        Credits power real-time AI. No refunds on consumed credits. Test mode is active — no real money is charged.
+    </div>
+</footer>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let _selectedAmt  = null;
+let _orgId        = null;
+let _orgName      = '';
+let _rzpKeyId     = null;
+let _isLoggedIn   = false;
+
+function _base() {
+    return (localStorage.getItem('croudify_backend_url') || 'http://localhost:8000').replace(/\/$/, '');
+}
+
+// ── Boot: detect auth & load wallet ──────────────────────────────
+async function boot() {
+    const auth  = localStorage.getItem('croudify_auth');
+    _orgId      = localStorage.getItem('croudify_org_id');
+    _orgName    = localStorage.getItem('croudify_org_name') || 'Authority';
+    _isLoggedIn = !!auth && !!_orgId;
+
+    const wBar   = document.getElementById('walletStatusBar');
+    const wLogin = document.getElementById('walletLoginPrompt');
+
+    if (_isLoggedIn) {
+        wBar.classList.remove('hidden');
+        wLogin.style.display = 'none';
+        await loadWalletBalance();
+    } else {
+        wBar.classList.add('hidden');
+        wLogin.style.display = 'flex';
+    }
+}
+
+async function loadWalletBalance() {
+    if (!_orgId) return;
+    const balEl = document.getElementById('walletBalDisplay');
+    try {
+        const r = await fetch(`${_base()}/wallet/${_orgId}`);
+        if (r.ok) {
+            const d = await r.json();
+            balEl.textContent = (d.balance ?? 0).toLocaleString();
+        }
+    } catch(e) {}
+}
+
+// ── Pack selection ─────────────────────────────────────────────
+function selectPack(amount, el) {
+    _selectedAmt = amount;
+    // Clear custom
+    document.getElementById('customAmt').value = '';
+    // Highlight
+    document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('rechargeBtn').disabled = false;
+    _updateNote(amount);
+}
+
+function onCustomAmt() {
+    const v = parseInt(document.getElementById('customAmt').value, 10);
+    document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
+    if (!isNaN(v) && v >= 1) {
+        _selectedAmt = v;
+        document.getElementById('rechargeBtn').disabled = false;
+        _updateNote(v);
+    } else {
+        _selectedAmt = null;
+        document.getElementById('rechargeBtn').disabled = true;
+    }
+}
+
+function _updateNote(amount) {
+    const credits = amount; // 1:1
+    document.getElementById('rechargeNote').innerHTML =
+        `You will receive <strong style="color:var(--safe)">${credits} Croudify Credits</strong> for ₹${amount}<br>
+         Powered by Razorpay · Secure &amp; encrypted`;
+}
+
+// ── Recharge flow ─────────────────────────────────────────────
+async function initiateRecharge() {
+    if (!_selectedAmt) return;
+
+    if (!_isLoggedIn) {
+        showToast('⚠ Please sign in via the Authority Dashboard first', true);
+        setTimeout(() => { window.location.href = 'authority.html'; }, 1800);
+        return;
+    }
+
+    const btn = document.getElementById('rechargeBtn');
+    btn.disabled = true; btn.textContent = 'Creating order…';
+
+    try {
+        const orderResp = await fetch(`${_base()}/wallet/create-order`, {
+            method:  'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ organization_id: _orgId, amount_inr: _selectedAmt }),
+        });
+        if (!orderResp.ok) {
+            const err = await orderResp.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP ${orderResp.status}`);
+        }
+        const order = await orderResp.json();
+        _rzpKeyId   = order.key_id;
+
+        await _loadRazorpay();
+
+        const rzp = new window.Razorpay({
+            key:         _rzpKeyId,
+            amount:      order.amount,
+            currency:    'INR',
+            name:        'Croudify',
+            description: `${order.credits_to_add} Croudify Credits`,
+            order_id:    order.order_id,
+            theme:       { color: '#00b7ff' },
+            prefill:     {
+                name:  _orgName,
+                email: localStorage.getItem('croudify_email') || '',
+            },
+            handler: async function(resp) {
+                // Verify signature (credits added server-side via webhook)
+                await fetch(`${_base()}/wallet/verify-payment`, {
+                    method:  'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        organization_id: _orgId,
+                        order_id:        order.order_id,
+                        payment_id:      resp.razorpay_payment_id,
+                        signature:       resp.razorpay_signature,
+                        amount_inr:      _selectedAmt,
+                    }),
+                });
+                showToast(`✓ Payment successful! ${order.credits_to_add} credits incoming via webhook.`);
+                setTimeout(() => loadWalletBalance(), 2500);
+            },
+            modal: { ondismiss: () => { btn.disabled = false; btn.textContent = '⚡ RECHARGE WALLET'; } }
+        });
+        rzp.open();
+    } catch(e) {
+        showToast('✕ ' + (e.message || 'Could not initiate payment'), true);
+        btn.disabled = false;
+        btn.textContent = '⚡ RECHARGE WALLET';
+    }
+}
+
+function _loadRazorpay() {
+    return new Promise((res, rej) => {
+        if (window.Razorpay) { res(); return; }
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+    });
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, isErr = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isErr ? ' err' : '');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.add('hidden'), 4200);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+boot();
+</script>
 </body>
 </html>

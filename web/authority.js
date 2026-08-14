@@ -583,11 +583,34 @@ function startReplay() {
 }
 
 // ── WEBSOCKET CONNECTION ─────────────────────────────────────────────────
-function authorityConnect() {
+async function authorityConnect() {
     const rawHost=document.getElementById('authUrl').value.trim();
     const code=document.getElementById('authCode').value.trim().toUpperCase();
     const host=rawHost.replace(/^wss?:\/\//,'').replace(/^https?:\/\//,'');
     if (!host||code.length<6) { alert('Enter backend URL and a 6-character session code.'); return; }
+
+    // ── Balance check before allowing connection ──────────────────────────
+    const orgId = localStorage.getItem('croudify_org_id');
+    if (orgId) {
+        const isLocal = host.startsWith('localhost')||host.startsWith('127.')||host.startsWith('10.');
+        const httpBase = (isLocal ? 'http://' : 'https://') + host;
+        try {
+            const bResp = await fetch(`${httpBase}/wallet/${orgId}`);
+            if (bResp.ok) {
+                const bData = await bResp.json();
+                const balance = bData.balance ?? 0;
+                if (balance === 0) {
+                    // Show no-balance gate overlay
+                    const gate = document.getElementById('noBalanceGate');
+                    const balEl = document.getElementById('nbgBalance');
+                    if (gate) { if (balEl) balEl.textContent = '0'; gate.classList.remove('hidden'); }
+                    return; // Block connection
+                }
+            }
+        } catch(e) {
+            // Backend offline — proceed with connection attempt (it will fail naturally)
+        }
+    }
 
     localStorage.setItem(STORE_HOST,host);
     localStorage.setItem(STORE_CODE,code);
@@ -731,7 +754,7 @@ if (typeof authorityConnect === 'function') {
     };
 }
 
-// ── Fetch demo org + wallet ───────────────────────────────────
+// ── Fetch authority org + wallet (uses real org_id, not demo) ────────────
 async function _loadWallet() {
     const base = _walletBackendBase();
     if (!base) {
@@ -743,15 +766,27 @@ async function _loadWallet() {
     }
 
     try {
-        // 1. Fetch (or auto-create) the demo org
+        // Use the logged-in authority's org_id, falling back to demo org
         if (!_walletOrgId) {
-            const orgResp = await fetch(`${base}/wallet/demo-org`);
-            if (!orgResp.ok) throw new Error(`org HTTP ${orgResp.status}`);
-            const orgData = await orgResp.json();
-            _walletOrgId   = orgData.id;
-            _walletOrgName = orgData.name || 'Demo Organisation';
-            document.getElementById('walletOrgName').textContent = _walletOrgName;
-            _walletOrgDot(true);
+            const savedOrgId   = localStorage.getItem('croudify_org_id');
+            const savedOrgName = localStorage.getItem('croudify_org_name');
+
+            if (savedOrgId) {
+                // Real authority — use their org directly
+                _walletOrgId   = savedOrgId;
+                _walletOrgName = savedOrgName || 'Authority';
+                document.getElementById('walletOrgName').textContent = _walletOrgName;
+                _walletOrgDot(true);
+            } else {
+                // Fallback: fetch or auto-create demo org
+                const orgResp = await fetch(`${base}/wallet/demo-org`);
+                if (!orgResp.ok) throw new Error(`org HTTP ${orgResp.status}`);
+                const orgData = await orgResp.json();
+                _walletOrgId   = orgData.id;
+                _walletOrgName = orgData.name || 'Demo Organisation';
+                document.getElementById('walletOrgName').textContent = _walletOrgName;
+                _walletOrgDot(true);
+            }
         }
 
         // 2. Fetch wallet balance + transactions
