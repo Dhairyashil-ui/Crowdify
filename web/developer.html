@@ -136,7 +136,7 @@
 <body class="min-h-screen p-3 md:p-5 font-sans text-gray-300">
 
     <!-- ── NO BALANCE GATE ── -->
-    <div id="noBalanceGate" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,23,0.95);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+    <div id="noBalanceGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,23,0.95);z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
         <div style="background:rgba(234,67,53,0.1);border:1px solid rgba(234,67,53,0.3);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:450px;">
             <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
             <div style="font-size:1.5rem;font-weight:700;color:#ea4335;margin-bottom:0.5rem;letter-spacing:1px;">ZERO BALANCE</div>
@@ -255,7 +255,8 @@
                     const data = await r.json();
                     if (data.balance <= 0) {
                         const gate = document.getElementById('noBalanceGate');
-                        gate.classList.remove('hidden');
+                        const disp = document.getElementById('gateBalanceDisplay');
+                        if (disp) disp.textContent = data.balance;
                         gate.style.display = 'flex';
                     }
                 }
