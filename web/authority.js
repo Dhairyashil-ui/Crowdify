@@ -830,31 +830,21 @@ async function _loadWallet() {
 }
 
 // ── Low-balance banner ────────────────────────────────────────
-const LOW_BAL_THRESHOLD = 20;
 let _bannerDismissed = false;
 
 function _updateLowBalBanner(balance) {
     const banner   = document.getElementById('lowBalBanner');
     const icon     = document.getElementById('lowBalIcon');
     const msg      = document.getElementById('lowBalMsg');
-    const countEl  = document.getElementById('lowBalCount');
     if (!banner) return;
 
-    // Re-show banner whenever balance changes to low (reset dismiss on each poll)
     if (balance === 0) {
         _bannerDismissed = false;
         banner.classList.remove('hidden');
         banner.classList.add('critical');
         banner.classList.remove('warning');
-        icon.textContent = '🚫';
-        msg.innerHTML = '<strong>Premium intelligence paused.</strong> Recharge to resume AI features.';
-    } else if (balance <= LOW_BAL_THRESHOLD) {
-        _bannerDismissed = false;
-        banner.classList.remove('hidden');
-        banner.classList.remove('critical');
-        icon.textContent = '⚠️';
-        countEl.textContent = balance;
-        msg.innerHTML = `Low Croudify Balance — <strong id="lowBalCount">${balance}</strong> credits remaining.`;
+        if (icon) icon.textContent = '🚫';
+        if (msg) msg.innerHTML = '<strong>Premium intelligence paused.</strong> Recharge to resume AI features.';
     } else {
         banner.classList.add('hidden');
         _bannerDismissed = false;

@@ -476,23 +476,10 @@ function _renderTransactions(txns) {
     }).join('');
 }
 
-// ── Low-balance banner ─────────────────────────────────────────
+// ── Update low balance ─────────────────────────────────────────
 function _updateLowBal(data) {
     const banner = document.getElementById('lowBalBanner');
-    const msg    = document.getElementById('lowBalMsg');
-    const balance = data.balance ?? 0;
-    const threshold = data.low_balance_threshold ?? 20;
-
-    if (balance === 0) {
-        banner.classList.remove('hidden');
-        banner.classList.add('critical');
-        msg.innerHTML = '<strong>Premium intelligence paused.</strong> Recharge to resume AI features.';
-    } else if (balance <= threshold) {
-        banner.classList.remove('hidden', 'critical');
-        msg.innerHTML = `Low Croudify Balance — <strong>${balance}</strong> credits remaining.`;
-    } else {
-        banner.classList.add('hidden');
-    }
+    if (banner) banner.classList.add('hidden');
 }
 
 // ── Recharge modal ─────────────────────────────────────────────
