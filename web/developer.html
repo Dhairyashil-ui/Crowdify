@@ -253,6 +253,8 @@
                 const r = await fetch(`${base}/wallet/${orgId}`);
                 if (r.ok) {
                     const data = await r.json();
+                    const headerBal = document.getElementById('devHeaderBalance');
+                    if (headerBal) headerBal.textContent = data.balance;
                     if (data.balance <= 0) {
                         const gate = document.getElementById('noBalanceGate');
                         const disp = document.getElementById('gateBalanceDisplay');
@@ -296,13 +298,14 @@
                         <span>Location: <span id="devLocation" class="text-gray-500">—</span></span>
                         <span class="opacity-40">|</span>
                         <span>Session: <span id="currentSessionCode" class="text-blue-400 font-bold">#---</span></span>
+                        <span class="opacity-40">|</span>
+                        <span>Balance: <span id="devHeaderBalance" class="text-blue-400 font-bold">—</span></span>
                     </div>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <input id="serverUrlInput" type="text" placeholder="Backend URL or tunnel host"
-                    class="dark-input w-56" />
+                <input id="serverUrlInput" type="hidden" value="https://crowdify-41sx.onrender.com" />
                 <input id="sessionCodeInput" type="text" placeholder="6-Char Code" maxlength="6"
                     class="dark-input w-28 uppercase font-mono" />
                 <a href="authority.html"
@@ -548,74 +551,7 @@
                 </div>
                 </div>
 
-                <!-- x402 Crowd Intelligence API Panel (Step 20) -->
-                <div class="panel overflow-hidden">
-                    <div class="panel-header" style="background:rgba(109,40,217,0.15);border-bottom:1px solid rgba(139,92,246,0.2)">
-                        <span class="dot" style="background:#8b5cf6"></span>
-                        <h3 style="color:#c4b5fd">Crowd Intelligence API</h3>
-                        <span class="ml-auto text-[9px] px-2 py-0.5 rounded-full font-bold" style="background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3)">x402</span>
-                    </div>
-                    <div class="p-4 flex flex-col gap-3">
-                        <!-- Endpoint info -->
-                        <div style="background:rgba(0,0,0,0.35);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:0.75rem;">
-                            <p class="text-[9px] font-bold uppercase tracking-widest mb-1.5" style="color:#7c3aed">POST</p>
-                            <p class="font-mono text-xs text-gray-300">/api/v1/crowd/predict</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-[10px]">
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Price</p>
-                                <p class="font-bold text-white font-mono">$0.001 <span class="font-normal text-gray-500">USDC</span></p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Network</p>
-                                <p class="font-bold text-white text-[10px]">Algorand TestNet</p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Payment</p>
-                                <p class="font-bold" style="color:#8b5cf6">x402</p>
-                            </div>
-                            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:0.5rem;">
-                                <p class="text-gray-500 uppercase tracking-wider mb-0.5">Protocol</p>
-                                <p class="font-bold text-white text-[10px]">HTTP 402</p>
-                            </div>
-                        </div>
 
-                        <!-- TRY API button -->
-                        <button id="x402TryBtn" onclick="x402DemoCall()"
-                            class="w-full py-2.5 rounded-lg font-bold text-xs tracking-widest transition-all"
-                            style="background:linear-gradient(135deg,#5b21b6,#3730a3);border:1px solid rgba(139,92,246,0.4);color:#e9d5ff;">
-                            ⚡ TRY API
-                        </button>
-
-                        <!-- Demo flow status -->
-                        <div id="x402Flow" class="hidden flex flex-col gap-1.5">
-                            <div id="x402Step1" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>POST /api/v1/crowd/predict</span>
-                            </div>
-                            <div id="x402Step2" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>402 Payment Required ← Server</span>
-                            </div>
-                            <div id="x402Step3" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>Signing Algorand payment…</span>
-                            </div>
-                            <div id="x402Step4" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>Retry with payment proof</span>
-                            </div>
-                            <div id="x402Step5" class="flex items-center gap-2 text-[10px] text-gray-500">
-                                <span class="w-3.5 h-3.5 rounded-full flex-shrink-0" style="background:rgba(255,255,255,0.08);"></span>
-                                <span>200 OK — Prediction response</span>
-                            </div>
-                        </div>
-
-                        <!-- Response preview -->
-                        <pre id="x402Response" class="hidden text-[9px] leading-relaxed overflow-auto rounded-lg p-3 font-mono"
-                            style="background:rgba(0,0,0,0.5);border:1px solid rgba(139,92,246,0.2);color:#a5b4fc;max-height:160px;"></pre>
-                    </div>
-                </div>
 
             </div>
         </div>
