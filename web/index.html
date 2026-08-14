@@ -553,7 +553,7 @@
                 <span style="font-size:0.78rem;color:var(--g-text-3);">credits</span>
             </div>
             <div class="wallet-status" id="walletLoginMsg" style="display:none;">
-                <span class="wallet-login-msg"><a href="authority.html">Sign in</a> with your authority account to top up your wallet</span>
+                <span class="wallet-login-msg"><a href="developer.html">Sign in</a> with your authority account to top up your wallet</span>
             </div>
 
             <div class="packs">
@@ -615,7 +615,7 @@
 <footer class="footer">
     <div class="footer-brand">Croud<span>ify</span> — AI Crowd Intelligence</div>
     <div class="footer-links">
-        <a href="authority.html">Command Center</a>
+        <a href="developer.html">Command Center</a>
         <a href="billing.html">Billing</a>
         <a href="developer.html">Developer API</a>
     </div>
@@ -687,9 +687,9 @@ async function boot() {
     if (_isLoggedIn) {
         wsBar.classList.remove('hidden');
         wLogin.style.display = 'none';
-        if (navSign) { navSign.textContent = 'Dashboard'; navSign.onclick = () => window.location.href='authority.html'; }
+        if (navSign) { navSign.textContent = 'Dashboard'; navSign.onclick = () => window.location.href='developer.html'; }
         if (navStart) { navStart.style.display = 'none'; }
-        if (heroBtn) { heroBtn.onclick = () => window.location.href='authority.html'; }
+        if (heroBtn) { heroBtn.onclick = () => window.location.href='developer.html'; }
         await loadWalletBalance();
     } else {
         wsBar.style.display = 'none';
@@ -743,7 +743,7 @@ async function initiateRecharge() {
     if (!_selectedAmt) return;
     if (!_isLoggedIn) {
         showToast('Please sign in first to recharge your authority wallet', 'error');
-        setTimeout(() => { window.location.href = 'authority.html'; }, 1800);
+        setTimeout(() => { window.location.href = 'developer.html'; }, 1800);
         return;
     }
 
@@ -800,7 +800,7 @@ function _loadRzp() {
 
 // ── Auth Handling ────────────────────────────────────────────────
 function openAuthModal() {
-    if (_isLoggedIn) { window.location.href='authority.html'; return; }
+    if (_isLoggedIn) { window.location.href='developer.html'; return; }
     document.getElementById('authOverlay').style.display = 'flex';
     document.getElementById('authStep1').style.display = 'block';
     document.getElementById('authStep2').style.display = 'none';
@@ -830,7 +830,7 @@ async function handleCredentialResponse(response) {
             localStorage.setItem('croudify_email', tempEmail);
             localStorage.setItem('croudify_org_id', data.id);
             localStorage.setItem('croudify_org_name', data.name || tempName);
-            window.location.href = 'authority.html';
+            window.location.href = 'developer.html';
             return;
         }
     } catch (e) {}
