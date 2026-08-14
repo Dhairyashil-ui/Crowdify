@@ -318,13 +318,13 @@
 
 <script>
 // ── State ──────────────────────────────────────────────────────
-let _orgId = null;
-let _orgName = '';
+let _orgId = localStorage.getItem('croudify_org_id');
+let _orgName = localStorage.getItem('croudify_org_name') || '';
 let _selectedAmt = null;
 let _rzpKeyId = null;
 
 function _base() {
-    return (localStorage.getItem('croudify_backend') || '').replace(/\/$/, '');
+    return 'https://crowdify-41sx.onrender.com';
 }
 
 // ── Persist backend URL ────────────────────────────────────────
@@ -589,7 +589,7 @@ function _loadRzp() {
 
 // ── Auto-load ──────────────────────────────────────────────────
 window.addEventListener('load', () => {
-    if (_base()) loadBilling();
+    loadBilling();
 });
 // Refresh every 30s
 setInterval(() => { if (_base() && _orgId) loadBilling(); }, 30_000);
