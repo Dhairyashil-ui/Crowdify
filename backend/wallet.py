@@ -194,11 +194,24 @@ async def create_organisation(body: OrgCreate):
     # ── Create wallet ──────────────────────────────────────────────────────────
     wallet_doc = {
         "organization_id": org_id_str,
-        "balance":         0,
+        "balance":         100,
         "currency":        "CREDIT",
         "updated_at":      now,
     }
     wallet_result = await _db.wallets.insert_one(wallet_doc)
+
+    # ── Record welcome bonus transaction ───────────────────────────────────────
+    await _db.wallet_transactions.insert_one({
+        "organization_id": org_id_str,
+        "type":            "RECHARGE",
+        "source":          "SYSTEM",
+        "feature":         None,
+        "amount_inr":      0,
+        "credits":         100,
+        "status":          "SUCCESS",
+        "reference_id":    f"WELCOME-{org_id_str}",
+        "created_at":      now,
+    })
 
     logger.info(f"[ORG] Created org '{body.name}' (id={org_id_str}) with wallet {wallet_result.inserted_id}")
 
@@ -215,7 +228,7 @@ async def create_organisation(body: OrgCreate):
         "wallet": {
             "id":              str(wallet_result.inserted_id),
             "organization_id": org_id_str,
-            "balance":         0,
+            "balance":         100,
             "currency":        "CREDIT",
         },
     }
