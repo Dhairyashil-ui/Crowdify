@@ -682,6 +682,7 @@ async function boot() {
     const wLogin  = document.getElementById('walletLoginMsg');
     const navStart= document.getElementById('navStartBtn');
     const heroBtn = document.getElementById('heroStartBtn');
+    const navSign = document.getElementById('navSignInBtn');
 
     if (_isLoggedIn) {
         wsBar.classList.remove('hidden');
@@ -850,7 +851,7 @@ async function submitAuthProfile() {
     btn.textContent = "CREATING..."; btn.disabled = true;
 
     try {
-        const r = await fetch(`${_base()}/org`, {
+        const r = await fetch(`${_base()}/org/create`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ name: name, email: tempEmail, department: dept, phone: ph })
         });
