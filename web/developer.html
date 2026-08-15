@@ -8,15 +8,17 @@
     <meta name="description" content="Croudify operator dashboard — real-time crowd behaviour monitoring and risk prediction.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Roboto+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['"Roboto Mono"', 'monospace'] },
+                    fontFamily: { 
+                        serif: ['"Instrument Serif"', 'serif'],
+                        sans: ['Inter', 'sans-serif'], 
+                        mono: ['"Roboto Mono"', 'monospace'] 
+                    },
                     colors: {
                         google: {
                             bg: '#f8f9fa', card: '#ffffff', border: '#dadce0',
@@ -30,17 +32,47 @@
     </script>
     <style>
         body {
-            background: #0f1117;
-            background-image:
-                radial-gradient(ellipse at 0% 0%, rgba(26, 115, 232, 0.07) 0px, transparent 55%),
-                radial-gradient(ellipse at 100% 100%, rgba(234, 67, 53, 0.05) 0px, transparent 50%);
+            background: #000000;
+        }
+
+        /* liquid-glass */
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.01);
+            background-blend-mode: luminosity;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: none;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liquid-glass::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1.4px;
+            background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.45) 0%,
+                rgba(255, 255, 255, 0.15) 20%,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0) 60%,
+                rgba(255, 255, 255, 0.15) 80%,
+                rgba(255, 255, 255, 0.45) 100%
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
 
         .panel {
-            background: rgba(22, 27, 38, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.01);
             border-radius: 1rem;
         }
+        .panel { @apply liquid-glass; }
 
         .panel-header {
             border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -131,14 +163,19 @@
         /* Chart container */
         #riskChartContainer { position: relative; height: 150px; }
     </style>
-    <link rel="icon" type="image/png" href="app_logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
 </head>
 
-<body class="min-h-screen p-3 md:p-5 font-sans text-gray-300">
+<body class="min-h-screen p-3 md:p-5 font-sans text-gray-300 relative">
+
+    <!-- Background Video -->
+    <video src="moon-walk.mp4" muted autoPlay loop playsInline class="fixed inset-0 w-full h-full object-cover z-[-2] opacity-40 mix-blend-screen pointer-events-none"></video>
+    <!-- Gradient Overlay -->
+    <div class="fixed inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black z-[-1] pointer-events-none"></div>
 
     <!-- ── NO BALANCE GATE ── -->
-    <div id="noBalanceGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,23,0.95);z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
-        <div style="background:rgba(234,67,53,0.1);border:1px solid rgba(234,67,53,0.3);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:450px;">
+    <div id="noBalanceGate" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+        <div class="liquid-glass" style="border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:450px;">
             <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
             <div style="font-size:1.5rem;font-weight:700;color:#ea4335;margin-bottom:0.5rem;letter-spacing:1px;">ZERO BALANCE</div>
             <p style="color:#e5e7eb;font-size:1rem;margin-bottom:2rem;line-height:1.5;">Your Croudify wallet balance is depleted. Access to the Developer Dashboard requires active credits.</p>
@@ -151,9 +188,9 @@
     </div>
 
     <!-- ── AUTH OVERLAY ── -->
-    <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f1117;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
-        <div id="authStep1" style="background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
-            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;">Croudify Login</div>
+    <div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Inter',sans-serif;">
+        <div id="authStep1" class="liquid-glass" style="border-radius:1.5rem;padding:3rem 2rem;text-align:center;max-width:400px;width:90%;">
+            <div style="font-family:'Instrument Serif',serif; font-size:2.5rem; color:#fff; margin-bottom:0.5rem; line-height: 1.1;">Developer Portal</div>
             <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;">Developer access requires identity verification.</p>
             <div id="g_id_onload"
                  data-client_id="1022460608162-94dor169q04064eqglu41f4c0off90h7.apps.googleusercontent.com"
@@ -173,8 +210,8 @@
             </div>
         </div>
         
-        <div id="authStep2" style="display:none; background:rgba(22,27,38,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:1rem;padding:3rem 2rem;text-align:left;max-width:400px;width:90%;">
-            <div style="font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:0.5rem;text-align:center;">COMPLETE PROFILE</div>
+        <div id="authStep2" class="liquid-glass" style="display:none; border-radius:1.5rem;padding:3rem 2rem;text-align:left;max-width:400px;width:90%;">
+            <div style="font-family:'Instrument Serif',serif; font-size:2rem; color:#fff; margin-bottom:0.5rem; text-align:center;">Complete Profile</div>
             <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:2rem;text-align:center;">Provide organization details to create your secure account.</p>
             
             <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Organization Name</label>
@@ -186,7 +223,7 @@
             <label style="color:#9ca3af; font-size:0.8rem; display:block; margin-bottom:0.2rem;">Contact Number</label>
             <input type="text" id="authPhone" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:0.5rem; padding:0.8rem; color:#fff; margin-bottom:1.5rem; outline:none;">
             
-            <button onclick="submitAuthProfile()" style="width:100%; background:#1a73e8; color:#fff; font-weight:600; padding:0.8rem; border-radius:0.5rem; border:none; cursor:pointer;">ENTER DASHBOARD</button>
+            <button onclick="submitAuthProfile()" style="width:100%; background:#fff; color:#000; font-weight:600; padding:0.9rem; border-radius:0.75rem; border:none; cursor:pointer;">Enter Dashboard</button>
         </div>
     </div>
     <script>
@@ -280,12 +317,12 @@
         <header class="panel flex flex-wrap justify-between items-center px-5 py-3 gap-4">
             <div class="flex items-center gap-5">
                 <div>
-                    <p class="text-[9px] font-bold tracking-[0.2em] uppercase text-blue-400 mb-0.5">CROUDIFY — OPERATOR VIEW</p>
-                    <h1 class="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
-                        <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                    <p class="text-[9px] font-bold tracking-[0.2em] uppercase text-white/50 mb-0.5">CROUDIFY — OPERATOR VIEW</p>
+                    <h1 class="font-serif text-3xl italic text-white tracking-tight flex items-center gap-2">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                         </svg>
-                        LIVE INTELLIGENCE
+                        Live Intelligence
                     </h1>
                 </div>
                 <div class="hidden md:flex flex-col gap-1 border-l border-white/10 pl-5 ml-1">

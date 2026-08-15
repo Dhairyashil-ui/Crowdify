@@ -5,45 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Croudify — Billing & Usage</title>
     <meta name="description" content="Croudify Billing — track credit usage, transaction history, and manage your Croudify Wallet.">
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="logo.png">
+    <!-- Tailwind setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              serif: ['"Instrument Serif"', 'serif'],
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
     <style>
     :root {
-        --bg:           #060a0f;
-        --surface:      #08101e;
-        --surface-2:    #0c1827;
-        --border:       rgba(0,183,255,0.10);
-        --border-mid:   rgba(0,183,255,0.22);
+        --bg:           #000000;
+        --surface:      transparent;
+        --surface-2:    transparent;
+        --border:       rgba(255,255,255,0.10);
+        --border-mid:   rgba(255,255,255,0.22);
         --text:         #b8d4ea;
-        --text-dim:     #3f6880;
-        --text-bright:  #e8f4ff;
-        --critical:     #ff3b3b;
-        --watch:        #ffaa00;
-        --safe:         #00e676;
-        --safe-bg:      rgba(0,230,118,0.06);
-        --safe-border:  rgba(0,230,118,0.28);
-        --accent:       #00b7ff;
-        --accent-bg:    rgba(0,183,255,0.07);
-        --x402-color:   #a78bfa;
+        --text-dim:     #6b7280;
+        --text-bright:  #ffffff;
+        --critical:     #ef4444;
+        --watch:        #f59e0b;
+        --safe:         #22c55e;
+        --safe-bg:      rgba(34,197,94,0.06);
+        --safe-border:  rgba(34,197,94,0.28);
+        --accent:       #ffffff;
+        --accent-bg:    rgba(255,255,255,0.07);
+        --x402-color:   #a855f7;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; }
     body {
         background-color: var(--bg);
-        background-image:
-            linear-gradient(rgba(0,183,255,0.022) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,183,255,0.022) 1px, transparent 1px);
-        background-size: 50px 50px;
         color: var(--text);
         font-family: 'Rajdhani', sans-serif;
         min-height: 100vh;
+        position: relative;
+    }
+
+    /* liquid-glass */
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.01);
+      background-blend-mode: luminosity;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: none;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .liquid-glass::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.4px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.15) 20%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.15) 80%,
+        rgba(255, 255, 255, 0.45) 100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
     }
 
     /* ── HEADER ── */
     .hdr {
         height: 64px;
-        background: rgba(6,10,15,0.97);
-        border-bottom: 1px solid var(--border-mid);
-        backdrop-filter: blur(20px);
+        background: transparent;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
         padding: 0 2rem;
         display: flex; align-items: center; gap: 1.5rem;
         position: sticky; top: 0; z-index: 100;
@@ -98,8 +142,6 @@
     /* ── SUMMARY CARDS ── */
     .summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:2rem; }
     .sum-card {
-        background:var(--surface);
-        border:1px solid var(--border-mid);
         border-radius:12px; padding:1.25rem 1.5rem;
     }
     .sum-card-label { font-size:0.65rem; font-weight:700; letter-spacing:0.18em; color:var(--text-dim); margin-bottom:0.5rem; }
@@ -111,8 +153,6 @@
 
     /* ── SECTION ── */
     .section {
-        background:var(--surface);
-        border:1px solid var(--border-mid);
         border-radius:12px; margin-bottom:1.5rem; overflow:hidden;
     }
     .section-hdr {
@@ -191,15 +231,13 @@
 
     /* ── RAZORPAY MODAL ── */
     .modal-overlay {
-        position:fixed; inset:0; background:rgba(6,10,15,0.88);
+        position:fixed; inset:0; background:rgba(0,0,0,0.85);
         backdrop-filter:blur(8px); display:flex; align-items:center;
         justify-content:center; z-index:2000;
     }
     .modal-overlay.hidden { display:none; }
     .modal-box {
-        background:var(--surface-2); border:1px solid var(--border-mid);
         border-radius:16px; padding:2rem; width:340px;
-        box-shadow:0 0 60px rgba(0,183,255,0.12);
     }
     .modal-title { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:900; color:var(--text-bright); letter-spacing:0.1em; margin-bottom:1.5rem; }
     .amount-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.6rem; margin-bottom:1.5rem; }
@@ -227,19 +265,35 @@
     .modal-proceed-btn:disabled { opacity:0.4; cursor:not-allowed; }
     .modal-proceed-btn:not(:disabled):hover { background:linear-gradient(135deg,#00b0f0,#0077c8); }
     </style>
-    <link rel="icon" type="image/png" href="app_logo.png">
+    <style>
+      /* Force header fonts */
+      .page-title { font-family: 'Instrument Serif', serif !important; font-style: italic; font-size: 2.5rem !important; letter-spacing: normal !important; text-transform: capitalize; color: white !important; }
+      .brand-name { font-family: 'Instrument Serif', serif !important; font-size: 1.5rem !important; letter-spacing: normal !important; text-transform: capitalize; color: white !important; }
+      .brand-sub { display: none; }
+    </style>
 </head>
 <body>
 
+<!-- Background Video -->
+<video
+  src="moon-walk.mp4"
+  muted
+  autoPlay
+  loop
+  playsInline
+  class="fixed inset-0 w-full h-full object-cover z-[-2] opacity-40 mix-blend-screen pointer-events-none"
+></video>
+<!-- Gradient Overlay -->
+<div class="fixed inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black z-[-1] pointer-events-none"></div>
+
 <!-- ── HEADER ── -->
-<header class="hdr">
+<header class="hdr liquid-glass" style="border-radius: 0; box-shadow: none;">
     <a href="authority.html" class="brand">
         <div class="brand-icon">
-            <img src="app_logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit;">
+            <img src="logo.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: inherit;">
         </div>
         <div>
-            <div class="brand-sub">CROUDIFY</div>
-            <div class="brand-name">BILLING</div>
+            <div class="brand-name">Billing</div>
         </div>
     </a>
 
@@ -258,8 +312,8 @@
 
 <!-- ── RECHARGE MODAL ── -->
 <div class="modal-overlay hidden" id="rechargeModal" onclick="_rchBackdrop(event)">
-    <div class="modal-box">
-        <div class="modal-title">RECHARGE WALLET</div>
+    <div class="modal-box liquid-glass">
+        <div class="modal-title" style="font-family:'Instrument Serif',serif; font-size: 2rem; font-style:italic; letter-spacing: normal; text-transform: capitalize;">Recharge Wallet</div>
         <div style="margin: 1rem 0;">
             <label style="color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; display: block; margin-bottom: 0.5rem;">ENTER AMOUNT (INR)</label>
             <div style="position: relative;">
@@ -280,8 +334,8 @@
 </div>
 
 <!-- ── PAGE ── -->
-<main class="page">
-    <div class="page-title">CROUDIFY USAGE</div>
+<main class="page relative z-10">
+    <div class="page-title" style="margin-top: 1rem;">Usage & Billing</div>
 
     <!-- Low-balance banner -->
     <div class="low-bal-banner hidden" id="lowBalBanner">
@@ -296,7 +350,7 @@
     </div>
 
     <!-- Feature breakdown -->
-    <div class="section" id="featSection" style="display:none">
+    <div class="section liquid-glass" id="featSection" style="display:none">
         <div class="section-hdr">
             <span class="section-title">▸ TODAY'S FEATURE USAGE</span>
             <span class="section-ts" id="featDate">—</span>
@@ -305,14 +359,14 @@
     </div>
 
     <!-- Transaction history -->
-    <div class="section" id="txnSection" style="display:none">
+    <div class="section liquid-glass" id="txnSection" style="display:none">
         <div class="section-hdr">
             <span class="section-title">▸ TRANSACTION HISTORY</span>
             <span class="section-ts" id="txnCount">—</span>
         </div>
         <div class="txn-list" id="txnList"></div>
         <div class="recharge-row">
-            <button class="recharge-btn" onclick="openRecharge()">+ RECHARGE WALLET</button>
+            <button class="recharge-btn liquid-glass" onclick="openRecharge()" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">+ RECHARGE WALLET</button>
         </div>
     </div>
 </main>
@@ -381,17 +435,17 @@ function _renderSummary(data) {
     const balClass = balance === 0 ? 'critical' : balance <= threshold ? 'low' : '';
 
     document.getElementById('summaryRow').innerHTML = `
-        <div class="sum-card ${balClass}">
+        <div class="sum-card liquid-glass ${balClass}">
             <div class="sum-card-label">CURRENT BALANCE</div>
             <div class="sum-card-value">${balance.toLocaleString()}</div>
             <div class="sum-card-unit">Croudify Credits</div>
         </div>
-        <div class="sum-card">
+        <div class="sum-card liquid-glass">
             <div class="sum-card-label">TODAY'S USAGE</div>
             <div class="sum-card-value">${todayUsage.toLocaleString()}</div>
             <div class="sum-card-unit">Credits consumed today</div>
         </div>
-        <div class="sum-card x402">
+        <div class="sum-card liquid-glass x402">
             <div class="sum-card-label">x402 API CALLS</div>
             <div class="sum-card-value">${x402calls}</div>
             <div class="sum-card-unit">Algorand TestNet today</div>
